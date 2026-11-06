@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://datdao5898.github.io/laixesosan/sitemap.xml
