@@ -1,0 +1,23 @@
+{
+  "name": "Sân Tập Số Sàn – Mô phỏng lái xe số sàn hạng B",
+  "short_name": "Sân Tập Số Sàn",
+  "description": "Tập lái ô tô số sàn và 11 bài sa hình hạng B ngay trên điện thoại, chấm điểm như thi thật.",
+  "lang": "vi",
+  "id": "/",
+  "start_url": "/?src=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#141a21",
+  "theme_color": "#141a21",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/og-image.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide", "label": "Sân tập nhìn từ trên cao cùng vô lăng, cần số và bàn đạp" }
+  ]
+}

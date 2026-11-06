@@ -1,0 +1,16 @@
+# Sân Tập Số Sàn
+
+> Ứng dụng web miễn phí mô phỏng lái ô tô số sàn và 11 bài thi sa hình hạng B (Việt Nam). Chạy ngay trên trình duyệt điện thoại hoặc máy tính, không cần cài đặt, không cần tài khoản. Chấm điểm bài thi theo barem tham chiếu Thông tư 05/2024/TT-BGTVT: 100 điểm, thời gian 18 phút, đạt từ 80 điểm. Đây là công cụ ôn tập, không phải phần mềm sát hạch chính thức.
+
+Người học tập các thao tác côn, ga, phanh, phanh tay, cần số 5 cấp và số lùi; tìm điểm bám côn; lên số, về số, dừng xe; rẽ, lùi xe, lùi vào chuồng, khởi hành ngang dốc. Có góc nhìn từ trên cao và góc nhìn trong khoang lái.
+
+## Trang chính
+
+- [Sân Tập Số Sàn (ứng dụng)](https://laixesosan.com/): mô phỏng lái xe, chọn bài tập hoặc thi thử sa hình đủ bài
+- [Hướng dẫn và câu hỏi thường gặp](https://laixesosan.com/huong-dan): cách tập số sàn, điểm bám là gì, danh sách 11 bài sa hình hạng B, các lỗi bị trừ điểm, phím điều khiển
+
+## Thông tin
+
+- [Điều khoản sử dụng](https://laixesosan.com/dieu-khoan)
+- [Chính sách bảo mật](https://laixesosan.com/chinh-sach-bao-mat)
+- [Mã nguồn (giấy phép MIT)](https://github.com/datdao5898/laixesosan)

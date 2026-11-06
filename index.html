@@ -18,6 +18,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta name="theme-color" content="#141a21">
 <link rel="canonical" href="https://laixesosan.com/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sân Tập Số Sàn">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="vi_VN">
 <meta property="og:site_name" content="Sân Tập Số Sàn">
@@ -121,6 +127,15 @@ kbd{font:600 11px/1 var(--display);background:#0d1218;border:1px solid var(--lin
 .lhead{display:flex;align-items:center;gap:8px}
 #lessonName{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;font:600 13px/1.25 var(--display);color:var(--amber)}
 #lessonName::after{content:" ▾";color:var(--dim)}
+html,body{touch-action:manipulation}
+.sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* Màn cảm ứng: nới vùng chạm của các nút nhỏ bằng lớp vô hình, nút trông vẫn như cũ */
+@media (pointer:coarse){
+  #lessonName,#btnRestart,#btnMin,#menuClose,.opts button,.blinks button{position:relative}
+  #lessonName::before,#btnRestart::before,#btnMin::before,#menuClose::before,.opts button::before,.blinks button::before{content:"";position:absolute;inset:-9px -3px}
+}
+.slot .hit{fill:transparent}
+.mlink{display:flex;align-items:center;min-height:44px;color:var(--amber);font-size:13px;font-weight:600;text-decoration:none}
 .iconbtn{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:12px;white-space:nowrap}
 #stepNo{font:600 11px/1 var(--display);color:var(--dim);letter-spacing:.05em}
 #stepText{font:600 19px/1.28 var(--body);text-wrap:balance}
@@ -269,6 +284,8 @@ kbd{font:600 11px/1 var(--display);background:#0d1218;border:1px solid var(--lin
 </style>
 </head>
 <body>
+<h1 class="sr">Sân Tập Số Sàn – mô phỏng lái ô tô số sàn và 11 bài sa hình hạng B</h1>
+<p class="sr">Ứng dụng miễn phí để tập côn, ga, phanh, điểm bám, lên xuống số và thi thử 11 bài sa hình hạng B, chấm 100 điểm, đạt từ 80. Xem <a href="huong-dan">hướng dẫn và câu hỏi thường gặp</a>.</p>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5GVTSRJW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
@@ -702,7 +719,7 @@ document.querySelectorAll('.pedal').forEach(p=>{
   for(const k in POS){
     const[x,y]=POS[k];const el=document.createElementNS('http://www.w3.org/2000/svg','g');
     el.setAttribute('class','slot');el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label',k==='N'?'Số mo':k==='R'?'Số lùi':'Số '+k);
-    el.innerHTML=`<circle cx="${x}" cy="${y}" r="16"></circle><text x="${x}" y="${y}">${k}</text>`;
+    el.innerHTML=`<rect class="hit" x="${x-17.5}" y="${y-25}" width="35" height="50"></rect><circle cx="${x}" cy="${y}" r="16"></circle><text x="${x}" y="${y}">${k}</text>`;
     press(el,()=>shift(k));
     el.addEventListener('keydown',e=>{if(e.key==='Enter'){shift(k)}});
     g.appendChild(el);
@@ -737,6 +754,7 @@ function openMenu(){
   head('Thi sa hình hạng B');add(EXAM_FULL,'');
   head('Luyện từng bài thi');EXAM_SINGLES.forEach((l,i)=>add(l,i+1));
   const note=document.createElement('p');note.className='mnote';note.textContent=EXAM_NOTE;list.appendChild(note);
+  const guide=document.createElement('a');guide.className='mlink';guide.href='huong-dan';guide.textContent='Hướng dẫn, barem điểm và câu hỏi thường gặp →';list.appendChild(guide);
   $('menu').hidden=false;
 }
 $('lessonName').onclick=openMenu;
