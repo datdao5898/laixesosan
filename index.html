@@ -1,0 +1,1733 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Sân Tập Số Sàn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+/* Bố cục: sân tập nhìn từ trên cao ở trên, táp-lô ô tô ở dưới, sắp theo đúng vị trí tay và chân người lái.
+   Mỗi bộ phận có một màu cố định ở mọi nơi: côn xanh dương, phanh đỏ, ga xanh lá. */
+:root{
+  color-scheme:dark;
+  --dash:#141a21; --panel:#1c242d; --panel2:#26303b; --line:#384552;
+  --ink:#eef2f4; --dim:#9caab6; --amber:#ffb53d;
+  --clutch:#54b9ec; --brake:#f0604f; --gas:#5dcb73;
+  --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --body:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--dash);color:var(--ink);font:14px/1.45 var(--body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+kbd{font:600 11px/1 var(--display);background:#0d1218;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:4px;padding:2px 5px;color:var(--ink);white-space:nowrap;display:inline-block}
+
+#app{height:100%;display:grid;gap:1px;background:#0b0f14;
+  grid-template-columns:190px minmax(270px,1.1fr) 150px minmax(240px,1.1fr) 262px;
+  grid-template-rows:minmax(0,1fr) 236px;
+  grid-template-areas:"view view view view view" "wheel gauges shifter drive pedals"}
+#view{grid-area:view;position:relative;overflow:hidden;background:#3b4a35;min-height:0}
+#world{position:absolute;inset:0;width:100%;height:100%;display:block}
+.panel{background:var(--panel);position:relative;min-width:0;min-height:0;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ptitle{font:600 11px/1.2 var(--display);letter-spacing:.09em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;align-items:center;gap:6px}
+#wheelBox{grid-area:wheel}#gaugeBox{grid-area:gauges}#shifterBox{grid-area:shifter}#driveBox{grid-area:drive}#pedalBox{grid-area:pedals}
+
+/* Vô lăng */
+#wheelWrap{flex:1;min-height:0;position:relative;touch-action:none;cursor:grab}
+#wheelCv,#gaugeCv,#driveCv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.blinks{display:flex;gap:6px}
+.blinks button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 2px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px}
+.blinks button.on{background:var(--amber);color:#201400;border-color:var(--amber);font-weight:600}
+#wheelText{font:600 12px/1.2 var(--display);color:var(--dim);text-align:center}
+
+/* Đồng hồ */
+#gaugeWrap{flex:1;min-height:0;position:relative}
+.ctlrow{display:flex;gap:6px}
+.ctlrow button{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 6px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:500}
+#btnIgn.on{border-color:var(--gas);color:var(--gas)}
+#btnHb.on{background:var(--brake);border-color:var(--brake);color:#fff}
+#btnHb.on kbd{color:var(--ink)}
+
+/* Cần số */
+#gate{flex:1;min-height:0;width:100%;display:block;touch-action:none}
+#btnIgn,#btnHb,.blinks button{touch-action:none}
+.slot{cursor:pointer}
+.slot circle{fill:#0e1319;stroke:var(--line);stroke-width:1.5}
+.slot text{fill:var(--dim);font:600 15px var(--display);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.slot:hover circle{stroke:var(--amber)}
+.slot:focus-visible{outline:none}.slot:focus-visible circle{stroke:var(--amber);stroke-width:3}
+#knob{transition:transform .13s ease-out;pointer-events:none}
+#knob circle{fill:var(--amber)}
+#knob text{fill:#241700;font:700 17px var(--display);text-anchor:middle;dominant-baseline:central}
+#gateHint{font-size:11px;color:var(--dim);text-align:center;line-height:1.3}
+
+/* Bàn đạp: thứ tự côn, phanh, ga như trong xe thật */
+#pedals{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pedal{--c:var(--ink);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:0;border-radius:8px}
+.pname{font:700 13px/1 var(--display);color:var(--c);letter-spacing:.04em}
+.track{flex:1;min-height:0;width:100%;background:#0e1319;border:1px solid var(--line);border-radius:7px;position:relative;touch-action:none;cursor:ns-resize;overflow:hidden}
+.fill{position:absolute;left:0;right:0;top:0;height:0;background:var(--c);opacity:.22}
+.plate{position:absolute;left:7px;right:7px;height:30px;top:0;border-radius:5px;background:repeating-linear-gradient(0deg,#d3dbe1 0 3px,#8d99a4 3px 6px);border:1px solid #000;box-shadow:0 3px 6px #0009}
+.bite{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,#54b9ec55 0 4px,transparent 4px 8px);border-block:1px dashed var(--clutch)}
+.bite span{position:absolute;right:3px;top:2px;font-size:9.5px;line-height:1;color:var(--clutch);font-weight:600}
+.pv{font:600 10.5px/1 var(--display);color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:0}
+.pname{white-space:nowrap}
+.pmeta{display:flex;gap:5px;align-items:center;font:600 11px/1 var(--display);color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* Sáng lên bộ phận cần thao tác */
+.glow{animation:glow 1.05s ease-in-out infinite;position:relative;z-index:2}
+@keyframes glow{0%,100%{box-shadow:0 0 0 2px var(--amber),0 0 0 2px #ffb53d00}50%{box-shadow:0 0 0 2px var(--amber),0 0 0 9px #ffb53d44}}
+#shifterBox.glow,#wheelBox.glow{box-shadow:inset 0 0 0 2px var(--amber);animation:none}
+@media (prefers-reduced-motion:reduce){.glow{animation:none;box-shadow:0 0 0 3px var(--amber)}}
+
+/* Thẻ bài học */
+#lesson{position:absolute;left:max(14px,env(safe-area-inset-left,0px));top:14px;width:344px;max-width:calc(100% - 28px);background:#141a21f2;border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px;box-shadow:0 8px 26px #0007;z-index:5}
+.lhead{display:flex;align-items:center;gap:8px}
+#lessonName{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;font:600 13px/1.25 var(--display);color:var(--amber)}
+#lessonName::after{content:" ▾";color:var(--dim)}
+.iconbtn{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:2px 8px;font-size:12px;white-space:nowrap}
+#stepNo{font:600 11px/1 var(--display);color:var(--dim);letter-spacing:.05em}
+#stepText{font:600 19px/1.28 var(--body);text-wrap:balance}
+#stepWhy{color:var(--dim);font-size:13px;line-height:1.45}
+#stepKeys{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:12px;color:var(--dim);align-items:center}
+#need{background:#5a2a14;border:1px solid #a5572c;border-radius:6px;padding:6px 9px;font-size:13px;color:#ffe1c8}
+#dots{display:flex;gap:4px}
+#dots i{height:4px;flex:1;background:var(--line);border-radius:2px}
+#dots i.done{background:var(--amber)}#dots i.cur{background:var(--ink)}
+.lbtns{display:flex;gap:7px;margin-top:2px}
+.primary{background:var(--amber);border:0;color:#241700;font-weight:700;border-radius:6px;padding:8px 13px}
+.ghost{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 13px}
+#lesson.min #stepWhy,#lesson.min #stepKeys,#lesson.min #dots{display:none}
+#lesson.min #stepText{font-size:15px}
+
+#menu{position:absolute;inset:0;background:#0b0f14b8;z-index:8;display:flex;align-items:flex-start;padding:14px;overflow:auto}
+#menuCard{width:400px;max-width:100%;background:var(--dash);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
+#menuCard h2{font:700 18px/1.2 var(--display);margin:0 0 4px}
+.mitem{display:flex;gap:10px;align-items:baseline;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:9px 11px}
+.mitem:hover{border-color:var(--amber)}
+.mitem b{font-weight:600;display:block}.mitem small{color:var(--dim);font-size:12px;display:block}
+.mitem .tick{font:700 13px var(--display);color:var(--dim);width:18px;flex:none;font-variant-numeric:tabular-nums}
+.mitem.done .tick{color:var(--gas)}
+
+#coach{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);max-width:min(560px,calc(100% - 28px));width:max-content;background:#141a21f5;border:1px solid var(--line);border-radius:8px;padding:9px 15px;font-weight:500;font-size:15px;text-align:center;z-index:6;transition:opacity .2s}
+#coach.bad{background:#7d2017;border-color:#d35545;color:#fff}
+#coach.good{background:#17512a;border-color:#3fa45d;color:#fff}
+#coach.warn{background:#6a4a0c;border-color:#c58f26;color:#fff}
+
+#topbar{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:4}
+.opts{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.opts button{background:#141a21e6;border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:12px}
+.opts button[aria-pressed="false"]{color:var(--dim)}
+#mini{width:190px;height:118px;background:#141a21d9;border:1px solid var(--line);border-radius:8px;display:block}
+#slopeChip{background:#6a4a0c;border:1px solid #c58f26;border-radius:6px;padding:3px 9px;font:600 12px var(--display)}
+
+#mini.pip{width:210px;height:150px;background:#47603a}
+.opts #optView{border-color:var(--amber);color:var(--amber);font-weight:600}
+#btnLook{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:14px;z-index:4;background:#141a21e6;border:1px solid var(--line);border-radius:7px;padding:8px 12px;font-size:13px;font-weight:500;touch-action:none}
+#btnLook.on{background:var(--amber);color:#241700;border-color:var(--amber)}
+#world.cab{touch-action:none;cursor:grab}
+#examHud{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;border-top:1px solid var(--line);padding-top:7px}
+#examHud b{font:700 26px/1 var(--display);color:var(--gas);font-variant-numeric:tabular-nums}
+#examHud b.low{color:var(--brake)}
+#examHud span{font-size:12px;color:var(--dim);margin-left:-8px}
+#examHud i{font:600 12px/1.2 var(--display);font-style:normal;color:var(--dim);font-variant-numeric:tabular-nums}
+#examLog{list-style:none;margin:6px 0 0;padding:0;font-size:12.5px;line-height:1.4;display:flex;flex-direction:column;gap:2px}
+#examLog:empty{display:none}
+#examLog b{color:var(--brake);font-family:var(--display)}
+#examLog.all{max-height:190px;overflow:auto;user-select:text;-webkit-user-select:text}
+#lesson.min #examLog{display:none}
+#examBtns{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:58px;z-index:4;display:flex;gap:6px;flex-wrap:wrap}
+#examBtns button{background:#141a21e6;border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-size:13px;font-weight:500;touch-action:none}
+#btnBelt.on{background:var(--gas);border-color:var(--gas);color:#08210f}
+#btnHaz.on{background:var(--brake);border-color:var(--brake);color:#fff}
+#dangerFlash{position:absolute;inset:0;z-index:3;pointer-events:none;box-shadow:inset 0 0 0 10px #f0302a;animation:dflash .5s steps(2) infinite}
+@keyframes dflash{50%{box-shadow:inset 0 0 0 10px #f0302a44}}
+@media (prefers-reduced-motion:reduce){#dangerFlash{animation:none}}
+.mhead{font:700 12px/1.2 var(--display);letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-top:8px}
+.mnote{font-size:12px;line-height:1.45;color:var(--dim);margin:6px 0 0}
+#drvText{font-size:12.5px;line-height:1.35;min-height:2.7em}
+#driveWrap{flex:1;min-height:0;position:relative}
+
+/* Màn hình vừa: sơ đồ truyền động nổi trên sân tập */
+@media (max-width:1120px){
+  #app{grid-template-columns:150px minmax(190px,1fr) 136px 232px;grid-template-rows:minmax(0,1fr) 216px;
+    grid-template-areas:"view view view view" "wheel gauges shifter pedals"}
+  #driveBox{grid-area:view;justify-self:end;align-self:end;width:250px;height:136px;margin:14px;border:1px solid var(--line);border-radius:8px;z-index:3;padding:8px 10px}
+  #coach{bottom:164px}
+  #topbar{max-width:calc(100% - 376px)}
+}
+/* Điện thoại dọc */
+@media (max-width:720px){
+  #app{grid-template-columns:minmax(0,1fr) 104px 148px;grid-template-rows:minmax(0,1fr) 86px 182px;
+    grid-template-areas:"view view view" "gauges gauges gauges" "wheel shifter pedals"}
+  .panel{padding:7px 8px;gap:4px}
+  #driveBox{display:none}
+  #mini{display:none}
+  #gaugeBox{flex-direction:row;align-items:stretch}
+  #gaugeBox .ptitle{display:none}
+  #gaugeBox .ctlrow{flex-direction:column;width:112px}
+  #gateHint,#wheelText{display:none}
+  .ptitle{font-size:10px}
+  .phint{display:none}
+  .pv{display:none}
+  .pmeta{display:none}
+  #pedals{gap:5px}
+  .plate{left:4px;right:4px}
+  .bite span{display:none}
+  .blinks kbd,.ctlrow kbd,.pmeta kbd,.ptitle kbd{display:none}
+  .blinks button{font-size:11px}
+  #coach{bottom:10px;font-size:14px}
+  #lesson{top:8px;left:8px;width:auto;max-width:none;right:8px;padding:9px 11px;gap:5px}
+  #topbar{top:auto;bottom:8px;right:8px;max-width:none}
+  #stepText{font-size:16px}#stepWhy{font-size:12px}
+  #stepKeys{display:none}
+  .opts button{padding:3px 7px;font-size:11px}
+  #btnLook{left:8px;bottom:42px;padding:6px 10px;font-size:12px}
+  #btnLook kbd,#optView kbd,#examBtns kbd{display:none}
+  #examBtns{left:8px;bottom:80px}
+  #examBtns button{padding:6px 9px;font-size:12px}
+  #examHud b{font-size:20px}
+  #examLog{font-size:11.5px}
+  #examLog.all{max-height:120px}
+}
+/* Điện thoại ngang */
+@media (max-height:520px) and (min-width:560px){
+  #app{grid-template-columns:150px minmax(0,1fr) 170px;grid-template-rows:minmax(0,1fr) 124px;
+    grid-template-areas:"wheel view pedals" "shifter view pedals"}
+  .panel{padding:6px 8px;gap:3px}
+  #driveBox,#mini,#gateHint,#wheelText{display:none}
+  #gaugeBox{grid-area:view;align-self:end;justify-self:center;width:310px;height:84px;flex-direction:row;background:#141a21e6;border-radius:8px 8px 0 0;z-index:3}
+  #gaugeBox .ptitle{display:none}
+  #gaugeBox .ctlrow{flex-direction:column;width:96px}
+  #btnLook{left:auto;right:6px;bottom:auto;top:112px;padding:5px 9px;font-size:12px}
+  #examBtns{left:auto;right:6px;bottom:auto;top:40px;flex-direction:column;align-items:flex-end}
+  #examBtns button{padding:4px 8px;font-size:11.5px}
+  #examHud b{font-size:17px}
+  #examLog{display:none}
+  #examLog.all{display:flex;max-height:70px}
+  #lesson{top:6px;left:6px;width:226px;padding:7px 10px;gap:3px}
+  #stepText{font-size:14px}#stepWhy,#stepKeys,#dots{display:none}
+  #topbar{top:6px;right:6px;bottom:auto;max-width:none}
+  .opts button{font-size:11px;padding:3px 6px}
+  #coach{bottom:92px;font-size:13px;padding:6px 10px}
+  kbd{display:none}
+  #gate{max-height:100%}
+  .phint,.pv,.pmeta,#optCam,#optPath{display:none}
+  #pedals{gap:5px}
+  .plate{left:4px;right:4px}
+  .bite span{display:none}
+  .pname{font-size:11px}
+}
+/* Điện thoại ngang rất hẹp và điện thoại dọc rất nhỏ */
+@media (max-height:520px) and (min-width:560px) and (max-width:700px){
+  #optSnd{display:none}
+  #lesson{width:190px}
+  #btnLook{left:auto;right:6px;top:112px}
+  #btnMin{display:none}
+}
+@media (max-width:340px){
+  #stepWhy{display:none}
+  #app{grid-template-columns:minmax(0,1fr) 88px 124px}
+  .pname{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="view" aria-label="Sân tập nhìn từ trên cao">
+    <canvas id="world"></canvas>
+    <div id="lesson">
+      <div class="lhead">
+        <button id="lessonName" aria-haspopup="dialog" title="Chọn bài"></button>
+        <button class="iconbtn" id="btnRestart">Làm lại</button>
+        <button class="iconbtn" id="btnMin" aria-pressed="false">Thu gọn</button>
+      </div>
+      <div id="dots"></div>
+      <div id="stepNo"></div>
+      <div id="stepText" aria-live="polite"></div>
+      <div id="need" hidden></div>
+      <div id="stepWhy"></div>
+      <div id="stepKeys"></div>
+      <div id="examBox" hidden><div id="examHud"></div><ul id="examLog"></ul></div>
+      <div class="lbtns" id="lessonBtns" hidden></div>
+    </div>
+    <div id="topbar">
+      <div class="opts">
+        <button id="optView">Vào khoang lái <kbd>V</kbd></button>
+        <button id="optCam" aria-pressed="true">Xe luôn hướng lên</button>
+        <button id="optPath" aria-pressed="true">Đường dự đoán</button>
+        <button id="optSnd" aria-pressed="true">Âm thanh</button>
+      </div>
+      <canvas id="mini" width="380" height="236" aria-hidden="true"></canvas>
+      <div id="slopeChip" hidden></div>
+    </div>
+    <div id="dangerFlash" hidden></div>
+    <div id="examBtns" hidden>
+      <button id="btnBelt">Dây an toàn <kbd>T</kbd></button>
+      <button id="btnHaz">Đèn khẩn cấp <kbd>G</kbd></button>
+    </div>
+    <button id="btnLook" hidden>Giữ để nhìn sau <kbd>B</kbd></button>
+    <div id="coach" role="status" style="opacity:0"></div>
+    <div id="menu" hidden>
+      <div id="menuCard" role="dialog" aria-label="Danh sách bài">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <h2 style="margin:0">Chọn bài tập</h2>
+          <button class="iconbtn" id="menuClose">Đóng</button>
+        </div>
+        <div id="menuList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="wheelBox" data-hl="wheel">
+    <div class="ptitle"><span>Vô lăng</span><span><kbd>J</kbd> <kbd>L</kbd></span></div>
+    <div id="wheelWrap"><canvas id="wheelCv"></canvas></div>
+    <div id="wheelText">Thẳng</div>
+    <div class="blinks">
+      <button id="blinkL" data-hl="blinkL" title="Xi nhan trái">◀ Trái <kbd>Q</kbd></button>
+      <button id="blinkR" data-hl="blinkR" title="Xi nhan phải"><kbd>E</kbd> Phải ▶</button>
+    </div>
+  </section>
+
+  <section class="panel" id="gaugeBox">
+    <div class="ptitle"><span>Đồng hồ</span><span id="reco" style="color:var(--amber)"></span></div>
+    <div id="gaugeWrap"><canvas id="gaugeCv"></canvas></div>
+    <div class="ctlrow">
+      <button id="btnIgn" data-hl="ign">Nổ máy <kbd>F</kbd></button>
+      <button id="btnHb" data-hl="hb">Phanh tay <kbd>H</kbd></button>
+    </div>
+  </section>
+
+  <section class="panel" id="shifterBox" data-hl="shifter">
+    <div class="ptitle"><span>Cần số</span><kbd>1-5 R N</kbd></div>
+    <svg id="gate" viewBox="0 0 120 150" role="group" aria-label="Cần số">
+      <path d="M25 25V125M60 25V125M95 25V125M25 75H95" fill="none" stroke="#384552" stroke-width="8" stroke-linecap="round"/>
+      <g id="slots"></g>
+      <g id="knob"><circle r="15"></circle><text id="knobT">N</text></g>
+    </svg>
+    <div id="gateHint">Đạp hết côn rồi bấm số</div>
+  </section>
+
+  <section class="panel" id="driveBox">
+    <div class="ptitle"><span>Bên trong xe</span></div>
+    <div id="driveWrap"><canvas id="driveCv"></canvas></div>
+    <div id="drvText"></div>
+  </section>
+
+  <section class="panel" id="pedalBox">
+    <div class="ptitle"><span>Bàn đạp</span><span class="phint">kéo xuống để đạp</span></div>
+    <div id="pedals">
+      <div class="pedal" data-p="clutch" data-hl="clutch" style="--c:var(--clutch)">
+        <div class="pname">CÔN <span class="pv">0%</span></div>
+        <div class="track" role="slider" aria-label="Bàn đạp côn" aria-valuemin="0" aria-valuemax="100"><div class="fill"></div><div class="bite" style="top:42%;height:28%"><span>bám</span></div><div class="plate"></div></div>
+        <div class="pmeta"><kbd>Space</kbd> <kbd>X</kbd></div>
+      </div>
+      <div class="pedal" data-p="brake" data-hl="brake" style="--c:var(--brake)">
+        <div class="pname">PHANH <span class="pv">0%</span></div>
+        <div class="track" role="slider" aria-label="Bàn đạp phanh" aria-valuemin="0" aria-valuemax="100"><div class="fill"></div><div class="plate"></div></div>
+        <div class="pmeta"><kbd>K</kbd></div>
+      </div>
+      <div class="pedal" data-p="gas" data-hl="gas" style="--c:var(--gas)">
+        <div class="pname">GA <span class="pv">0%</span></div>
+        <div class="track" role="slider" aria-label="Bàn đạp ga" aria-valuemin="0" aria-valuemax="100"><div class="fill"></div><div class="plate"></div></div>
+        <div class="pmeta"><kbd>I</kbd></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/*SIM-START*/
+const CAR={mass:1250,R:.3,final:4.1,L:2.6,maxSteer:.62,Ie:.25,clMax:350,clK:15,idle:880,stallRpm:380,limit:6300,
+  /* wheelFace: mép ngoài lốp tính từ tim xe, cũng là mốc chấm "bánh đè vạch"; thân xe rộng hơn lốp mỗi bên 6 cm */
+  width:1.75,rear:.8,front:3.5,wheelFace:.815,tire:.2,
+  ratios:{R:-3.4,N:0,'1':3.6,'2':2.05,'3':1.4,'4':1.03,'5':.8}};
+const RPM=60/(2*Math.PI);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function lerpTable(t,x){if(x<=t[0][0])return t[0][1];for(let i=1;i<t.length;i++)if(x<=t[i][0]){const a=t[i-1],b=t[i];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}return t[t.length-1][1]}
+const TORQUE=[[400,90],[1000,115],[2000,125],[4000,132],[5500,120],[6500,80]];
+/* Độ ăn côn: bàn đạp từ .75 (bắt đầu bám) đến .3 (ăn hoàn toàn) */
+function clutchEngage(p){const t=clamp((.75-p)/.45,0,1);return t*t*(3-2*t)}
+/* Mặt dốc trên đoạn đường phía bắc: đi về hướng tây là lên dốc */
+const HILL={yMin:-66,yMax:-54,up:[48,70],down:[16,38],grade:.1};
+function slopeX(x,y){if(y<HILL.yMin||y>HILL.yMax)return 0;if(x>=HILL.up[0]&&x<=HILL.up[1])return -HILL.grade;if(x>=HILL.down[0]&&x<=HILL.down[1])return HILL.grade;return 0}
+function newCar(){return{x:0,y:0,h:0,v:0,we:0,engine:false,crank:0,gear:'N',clutch:0,gas:0,brake:0,hb:true,steer:0,blink:0,blinkTurn:0,tc:0,offroad:false,belt:false,hazard:false,ev:[]}}
+function newInput(){return{gasKey:false,brakeKey:false,clutchKey:false,biteKey:false,left:false,right:false,gasPtr:null,brakePtr:null,clutchPtr:null,wheelPtr:false}}
+function approach(v,t,r,dt){return v<t?Math.min(t,v+r*dt):Math.max(t,v-r*dt)}
+function updatePedals(s,i,dt){
+  /* Giữ phím ga: lên nhanh tới 30% rồi tăng chậm, để phím cũng có thể đạp ga nhẹ */
+  s.gas=i.gasPtr!=null?i.gasPtr:approach(s.gas,i.gasKey?1:0,i.gasKey?(s.gas<.3?.85:.22):3,dt);
+  s.brake=i.brakePtr!=null?i.brakePtr:approach(s.brake,i.brakeKey?1:0,i.brakeKey?1.7:5,dt);
+  if(i.clutchPtr!=null)s.clutch=i.clutchPtr;
+  else if(i.clutchKey)s.clutch=approach(s.clutch,1,4.5,dt);
+  else if(i.biteKey)s.clutch=approach(s.clutch,.6,1.2,dt);
+  /* Thả phím côn: rất chậm ở vùng bám khi xuất phát, nhanh hơn khi xe đã lăn bánh để lên số không mất đà */
+  else{const r=s.clutch>.72?2.2:s.clutch>.32?(Math.abs(s.v)>1.5?.8:.2):1.6;s.clutch=approach(s.clutch,0,r,dt)}
+  if(!i.wheelPtr){
+    const k=(i.right?1:0)-(i.left?1:0);
+    if(k)s.steer=clamp(s.steer+k*(Math.sign(s.steer)===-k?2.2:1.05)*dt,-1,1);
+    else s.steer=approach(s.steer,0,Math.min(1,Math.abs(s.v)/4)*1.25,dt);
+  }
+}
+/* Góc lái thực của bánh trước: càng nhanh càng bị giới hạn */
+function steerAngle(s){const a=Math.abs(s.v),limit=a>1?Math.atan(CAR.L*7/(a*a)):CAR.maxSteer;return clamp(s.steer*CAR.maxSteer,-limit,limit)}
+function stepCar(s,dt,onRoad){
+  const G=CAR.ratios[s.gear]*CAR.final,e=clutchEngage(s.clutch),wt=s.v/CAR.R*G;
+  let Tc=0;
+  if(G!==0&&e>0)Tc=CAR.clMax*e*e*clamp((s.we-wt)/CAR.clK,-1,1);
+  s.tc=Tc;
+  const rpm=s.we*RPM;let Te;
+  if(s.crank>0){
+    s.crank-=dt;s.we=26;Tc=0;
+    if(s.crank<=0){s.engine=true;s.we=1050/RPM;s.ev.push('started')}
+    Te=0;
+  }else if(s.engine){
+    const gov=clamp((CAR.idle-rpm)/350,0,.6);
+    let th=Math.max(s.gas,gov);if(rpm>CAR.limit)th=0;
+    Te=th*lerpTable(TORQUE,rpm)-(7+rpm*.0075);
+  }else Te=-(38+rpm*.012);
+  if(s.crank<=0){
+    s.we=Math.max(0,s.we+(Te-Tc)/CAR.Ie*dt);
+    if(s.engine&&s.we*RPM<CAR.stallRpm){
+      s.engine=false;
+      s.ev.push('stall:'+(s.hb?'hb':s.brake>.15?'brake':(+s.gear>=2)?'high':'fast'));
+    }
+  }
+  const Fd=Tc*G/CAR.R;
+  const cx=s.x+Math.cos(s.h)*1.3,cy=s.y+Math.sin(s.h)*1.3;
+  const Fg=-CAR.mass*9.81*slopeX(cx,cy)*Math.cos(s.h);
+  const Faero=-.42*s.v*Math.abs(s.v);
+  s.v+=(Fd+Fg+Faero)/CAR.mass*dt;
+  const res=s.brake*9000+(s.hb?4500:0)+(onRoad?170:620);
+  const dv=res/CAR.mass*dt;
+  s.v=Math.abs(s.v)<=dv?0:s.v-Math.sign(s.v)*dv;
+  const dh=s.v/CAR.L*Math.tan(steerAngle(s))*dt;
+  s.h+=dh;if(s.blink)s.blinkTurn+=Math.abs(dh);
+  s.x+=s.v*Math.cos(s.h)*dt;s.y+=s.v*Math.sin(s.h)*dt;
+}
+/*SIM-END*/
+
+/* ---------- Bản đồ ---------- */
+let WALL={x:130,y:90},curMap='yard';const RW=8;
+const ROADS=[[-100,-60,100,-60],[100,-60,100,60],[100,60,-100,60],[-100,60,-100,-60],[-100,0,100,0],[0,-60,0,60]];
+const DASHES=[[-96,0,-8,0],[8,0,96,0],[0,-56,0,-8],[0,8,0,56],[-96,-60,-8,-60],[8,-60,96,-60],[-96,60,-8,60],[8,60,96,60],[-100,-56,-100,-8],[-100,8,-100,56],[100,-56,100,-8],[100,8,100,56]];
+const BAY={x0:-51.9,x1:-48.1,y0:4,y1:10.6};
+let TREES=[[-70,-30,4],[-40,-40,3.4],[-22,-22,3],[-78,-14,2.8],[60,-25,4],[30,-38,3.2],[80,-40,2.8],[-70,30,3.6],[-30,32,4],[-84,44,3],[22,44,3],[84,42,3.6],[-118,-70,4],[118,75,4],[-118,76,3.6],[118,-76,4]];
+let BLDS=[[32,16,34,20]];
+const YARD={WALL,TREES,BLDS,hill:{...HILL}};
+function initCones(){return[[BAY.x0,BAY.y0],[BAY.x1,BAY.y0],[BAY.x0,BAY.y1],[BAY.x1,BAY.y1],[BAY.x0,(BAY.y0+BAY.y1)/2],[BAY.x1,(BAY.y0+BAY.y1)/2]].map(([x,y])=>({x,y,vx:0,vy:0,hit:false}))}
+function segDist(px,py,[ax,ay,bx,by]){const dx=bx-ax,dy=by-ay,t=clamp(((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy),0,1);return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
+function isOnRoad(x,y){if(curMap==='exam')return examOutside(x,y)<=.3;for(const r of ROADS)if(segDist(x,y,r)<=RW/2+.3)return true;
+  return x>=BAY.x0-.3&&x<=BAY.x1+.3&&y>=BAY.y0-.3&&y<=BAY.y1+.3}
+function carCorners(s,m=0){const c=Math.cos(s.h),n=Math.sin(s.h),w=CAR.width/2+m,o=[];
+  for(const[a,b]of[[CAR.front+m,w],[CAR.front+m,-w],[-CAR.rear-m,w],[-CAR.rear-m,-w]])o.push([s.x+a*c-b*n,s.y+a*n+b*c]);return o}
+function isBlocked(s){for(const[x,y]of carCorners(s)){
+    if(Math.abs(x)>WALL.x||Math.abs(y)>WALL.y)return'wall';
+    for(const[a,b,w,h]of BLDS)if(x>a&&x<a+w&&y>b&&y<b+h)return'bld';
+    for(const[a,b,r]of TREES)if(Math.hypot(x-a,y-b)<r*.45)return'tree';
+  }
+  const cx=s.x+Math.cos(s.h)*1.3,cy=s.y+Math.sin(s.h)*1.3;
+  for(const[a,b,r]of TREES)if(Math.hypot(cx-a,cy-b)<r*.45+.8)return'tree';
+  return null}
+
+/* ---------- Bài học ---------- */
+const kmh=s=>Math.abs(s.v)*3.6;
+const inZone=(s,z)=>{const cx=s.x+Math.cos(s.h)*1.3,cy=s.y+Math.sin(s.h)*1.3;return Math.abs(cx-z.x)<z.w/2&&Math.abs(cy-z.y)<z.h/2};
+const needEngine=s=>s.engine||s.crank>0?null:{m:'Máy đang tắt. Đạp côn rồi nổ máy.',hl:['clutch','ign']};
+const needGear=g=>s=>s.gear===g?null:{m:`Xe cần ở số ${g==='R'?'lùi (R)':g}. Đạp hết côn rồi vào số.`,hl:['clutch','shifter']};
+const needHbOff=s=>s.hb?{m:'Phanh tay vẫn đang kéo. Nhả phanh tay.',hl:['hb']}:null;
+const K={clutch:['Space','giữ để đạp côn'],bite:['X','giữ ở điểm bám'],gas:['I','ga'],brake:['K','phanh'],hb:['H','phanh tay'],ign:['F','nổ máy'],steer:['J L','đánh lái'],bl:['Q','xi nhan trái'],br:['E','xi nhan phải'],belt:['T','dây an toàn'],haz:['G','đèn khẩn cấp'],view:['V','đổi góc nhìn'],look:['B','nhìn sau']};
+const startPos=(rest={})=>Object.assign({engine:true,gear:'N',hb:false},rest);
+function departSteps(g='1',target=10){return[
+  {t:`Đạp côn, vào số ${g}, nhả côn từ từ rồi thêm ga tới ${target} km/h`,why:'Khi xe bắt đầu bò mới thêm ga. Nhả côn nhanh là chết máy.',keys:['clutch','gas'],hl:['clutch','shifter','gas'],need:[needEngine,needHbOff],done:s=>s.gear===g&&kmh(s)>=target&&s.clutch<.25}]}
+function turnLesson(id,name,sub,dir,zone){const right=dir>0,word=right?'phải':'trái';return{id,name,sub,
+  pose:startPos({x:-72,y:2,h:0}),zone,
+  steps:[...departSteps('1',12),
+   {t:'Đạp côn, lên số 2, nhả côn',why:'Số 2 đủ khỏe để qua giao lộ ở tốc độ thấp.',keys:['clutch','gas'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='2'&&s.clutch<.25},
+   {t:`Bật xi nhan ${word}`,why:'Báo cho xe xung quanh trước khi rẽ, cách giao lộ khoảng 30 m.',keys:[right?'br':'bl'],hl:[right?'blinkR':'blinkL'],done:s=>s.blink===dir},
+   {t:'Rà phanh, giữ dưới 15 km/h, tới vạch dừng',why:'Giảm tốc xong rồi mới rẽ. Nếu vòng tua tụt dưới 1000, đạp thêm côn cho khỏi giật.',keys:['brake','clutch'],hl:['brake'],need:[needEngine],done:s=>s.x>-14&&kmh(s)<16},
+   {t:`Qua vạch thì đánh lái ${word}, đi tới ô sáng`,why:right?'Rẽ phải vòng hẹp: ôm sát lề phải, vào đúng làn bên phải của đường mới.':'Rẽ trái vòng rộng: đi qua tâm giao lộ rồi mới vào làn bên phải của đường mới.',keys:['steer','gas','brake'],hl:['wheel'],need:[needEngine],done:s=>inZone(s,zone)},
+  ]}}
+
+const LESSONS=[
+{id:'start',name:'Nổ máy và xuất phát',sub:'Côn, số 1, điểm bám, xe bò đi',pose:{x:-85,y:2,h:0,engine:false,gear:'N',hb:true},steps:[
+  {t:'Đạp hết côn và giữ nguyên',why:'Côn tách máy khỏi bánh xe. Luôn đạp côn trước khi nổ máy hoặc vào số.',keys:['clutch'],hl:['clutch'],done:s=>s.clutch>.85},
+  {t:'Nổ máy, chân vẫn giữ côn',why:'Kim vòng tua lên khoảng 800 là máy đã chạy không tải.',keys:['ign','clutch'],hl:['ign'],done:s=>s.engine},
+  {t:'Vào số 1',why:'Số 1 khỏe nhất, chuyên dùng để xuất phát.',keys:['clutch'],hl:['shifter'],need:[needEngine],done:s=>s.gear==='1'},
+  {t:'Nhả phanh tay',why:'Côn vẫn đang đạp nên xe chưa đi đâu cả.',keys:['hb','clutch'],hl:['hb'],need:[needEngine,needGear('1')],done:s=>!s.hb},
+  {t:'Nhả côn thật chậm cho tới khi xe bò',why:'Tới vùng “bám”, vòng tua tụt nhẹ và xe nhúc nhích. Đây là điểm quan trọng nhất của số sàn. Giữ X để dừng chân ở đó.',keys:['bite'],hl:['clutch'],need:[needEngine,needGear('1'),needHbOff],done:s=>kmh(s)>1.5},
+  {t:'Nhả hết côn, xe tự chạy khoảng 6 km/h',why:'Không cần ga xe vẫn bò được trên đường bằng ở số 1.',keys:[],hl:['clutch'],need:[needEngine,needGear('1')],done:s=>s.clutch<.05&&kmh(s)>2},
+  {t:'Đạp ga nhẹ tới 15 km/h',why:'Đạp ga từng chút. Vòng tua quá 3000 là đã đến lúc lên số.',keys:['gas'],hl:['gas'],need:[needEngine,needGear('1')],done:s=>kmh(s)>=15},
+]},
+{id:'up',name:'Lên số',sub:'Từ số 1 lên số 3 trên đường thẳng',pose:startPos({x:-92,y:62,h:0}),steps:[
+  ...departSteps('1',12),
+  {t:'Nhả ga, đạp côn, vào số 2',why:'Ba động tác liền nhau: chân phải rời ga, chân trái đạp côn, tay vào số.',keys:['clutch','gas'],hl:['gas','clutch','shifter'],need:[needEngine],done:s=>s.gear==='2'},
+  {t:'Nhả côn, thêm ga tới 25 km/h',why:'Vòng tua tụt xuống khi vừa lên số là bình thường.',keys:['gas'],hl:['clutch','gas'],need:[needEngine,needGear('2')],done:s=>s.clutch<.15&&kmh(s)>=25},
+  {t:'Nhả ga, đạp côn, vào số 3',why:'Lên số quanh 2000 đến 2500 vòng cho xe êm và đỡ tốn xăng.',keys:['clutch'],hl:['gas','clutch','shifter'],need:[needEngine],done:s=>s.gear==='3'},
+  {t:'Nhả côn, thêm ga tới 40 km/h',why:'Chú ý vòng tua: cùng tốc độ, số cao thì máy quay chậm hơn.',keys:['gas'],hl:['clutch','gas'],need:[needEngine,needGear('3')],done:s=>s.clutch<.15&&kmh(s)>=40},
+]},
+{id:'down',name:'Về số và dừng xe',sub:'Rà phanh, về số, đạp côn đúng lúc',pose:startPos({x:-92,y:62,h:0}),steps:[
+  {t:'Chạy tới 30 km/h ở số 3',why:'Đi lần lượt số 1, số 2 rồi số 3.',keys:['clutch','gas'],hl:['clutch','shifter','gas'],need:[needEngine,needHbOff],done:s=>s.gear==='3'&&kmh(s)>=30&&s.clutch<.25},
+  {t:'Nhả ga, rà phanh xuống 18 km/h',why:'Phanh giảm tốc, số chỉ để máy kéo khỏe ở tốc độ mới.',keys:['brake'],hl:['brake'],done:s=>kmh(s)<=18},
+  {t:'Đạp côn, về số 2, nhả côn',why:'Về số thấp hơn để máy không bị ì.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='2'&&s.clutch<.25},
+  {t:'Phanh tiếp, dưới 10 km/h thì đạp hết côn',why:'Không đạp côn trước khi xe dừng là chết máy, vì bánh xe dừng kéo máy dừng theo.',keys:['brake','clutch'],hl:['brake','clutch'],done:s=>kmh(s)<10&&s.clutch>.8},
+  {t:'Giữ côn, phanh tới khi xe dừng hẳn',why:'Đạp phanh đều chân, gần dừng thì nhả bớt cho xe khỏi giật.',keys:['brake','clutch'],hl:['brake'],done:s=>kmh(s)<.3},
+  {t:'Về số N, nhả côn, kéo phanh tay',why:'Thứ tự đỗ xe an toàn. Số N rồi mới được nhả côn.',keys:['hb'],hl:['shifter','hb'],done:s=>s.gear==='N'&&s.hb&&s.clutch<.2},
+]},
+turnLesson('right','Rẽ phải','Xi nhan, giảm tốc, ôm cua vào làn phải',1,{x:-2,y:30,w:6,h:9}),
+turnLesson('left','Rẽ trái','Đi qua tâm giao lộ rồi mới vào làn',-1,{x:2,y:-30,w:6,h:9}),
+{id:'rev',name:'Lùi xe',sub:'Vào số R, lùi thẳng, đuôi xe đi theo vô lăng',pose:startPos({x:-20,y:2,h:0}),steps:[
+  {t:'Đạp hết côn, vào số lùi R',why:'Chỉ vào R khi xe đã dừng hẳn. Đèn lùi trắng sẽ bật.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='R'},
+  {t:'Nhả côn thật chậm, lùi thẳng 6 m',why:'Vạch cam sau đuôi xe là đường xe sẽ đi. Lùi bằng nửa côn, gần như không cần ga.',keys:['bite','brake'],hl:['clutch'],need:[needEngine,needGear('R'),needHbOff],done:(s,m)=>m.back>=6},
+  {t:'Đánh lái phải: đuôi xe đi sang phải',why:'Khi lùi, đánh lái bên nào thì đuôi xe đi về bên đó. Đầu xe văng sang phía ngược lại.',keys:['steer'],hl:['wheel'],need:[needEngine,needGear('R')],done:(s,m)=>s.steer>.3&&m.back>=7&&Math.abs(s.h-m.h0)>.3},
+  {t:'Đánh lái trái để kéo đuôi xe về',why:'Quan sát vạch cam đổi hướng ngay khi xoay vô lăng.',keys:['steer'],hl:['wheel'],need:[needEngine,needGear('R')],done:(s,m)=>s.steer<-.3&&s.v<-.1},
+  {t:'Đạp côn và phanh, dừng xe',why:'Luôn đạp côn cùng phanh khi xe gần dừng ở số thấp.',keys:['clutch','brake'],hl:['clutch','brake'],done:s=>kmh(s)<.3&&s.clutch>.7},
+]},
+{id:'bay',name:'Lùi vào chuồng',sub:'Bài sa hình: lùi vào khung, không đụng cọc',pose:startPos({x:-46.4,y:1.7,h:0}),bay:true,steps:[
+  {t:'Đạp hết côn, vào số lùi R',why:'Xe đã đứng đúng vị trí. Chuồng nằm phía sau, bên phải xe.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='R'},
+  {t:'Đánh hết lái phải trước khi xe lăn bánh',why:'Xoay vô lăng khi xe đứng yên cho đủ lái. Xe chưa đi thì không tự trả lái.',keys:['steer'],hl:['wheel'],done:s=>s.steer>.9},
+  {t:'Giữ nguyên lái, nhả côn thật chậm cho xe lùi',why:'Vẫn giữ phím L (hoặc giữ vô lăng) vì vô lăng tự trả về khi xe chạy. Giữ X ở nửa côn cho xe đi chậm, theo vạch cam vào giữa hai cọc.',keys:['steer','bite','brake'],hl:['clutch','wheel'],need:[needEngine,needGear('R')],done:s=>{const a=Math.abs(((s.h+Math.PI/2)%(2*Math.PI)+2*Math.PI)%(2*Math.PI));return Math.min(a,2*Math.PI-a)<.18}},
+  {t:'Xe thẳng với chuồng thì trả lái, lùi tiếp',why:'Thả phím lái để vô lăng tự về giữa. Sửa nhẹ nếu xe lệch.',keys:['steer','bite','brake'],hl:['wheel','clutch'],need:[needEngine,needGear('R')],done:(s)=>carCorners(s).every(([x,y])=>x>BAY.x0&&x<BAY.x1&&y>BAY.y0&&y<BAY.y1)},
+  {t:'Đạp côn và phanh, dừng trong khung',why:'Toàn bộ thân xe phải nằm trong vạch trắng khi dừng hẳn.',keys:['clutch','brake'],hl:['clutch','brake'],need:[s=>carCorners(s).every(([x,y])=>x>BAY.x0&&x<BAY.x1&&y>BAY.y0&&y<BAY.y1)?null:{m:'Xe đã ra khỏi khung. Chỉnh lại cho cả thân xe nằm trong vạch trắng.',hl:['clutch','brake','wheel']}],done:s=>kmh(s)<.3},
+]},
+{id:'hill',name:'Khởi hành ngang dốc',sub:'Dốc 10%, không để xe trôi lùi',pose:{x:58,y:-62,h:Math.PI,engine:true,gear:'N',hb:true},zone:{x:43,y:-62,w:9,h:3.8},steps:[
+  {t:'Đạp hết côn, vào số 1',why:'Xe đang đứng giữa dốc, nhờ có phanh tay giữ lại.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='1'},
+  {t:'Nhả côn tới điểm bám rồi giữ nguyên',why:'Giữ X. Vòng tua tụt nhẹ, đầu xe hơi trồi lên. Lúc này máy đã bắt đầu kéo xe.',keys:['bite'],hl:['clutch'],need:[needEngine,needGear('1')],done:s=>clutchEngage(s.clutch)>.03&&s.hb},
+  {t:'Thêm ga tới khoảng 1800 vòng',why:'Dốc cần nhiều lực hơn đường bằng, không có ga là chết máy.',keys:['gas','bite'],hl:['gas'],need:[needEngine,needGear('1')],done:s=>s.we*RPM>1500&&s.gas>.05},
+  {t:'Vẫn giữ ga và nửa côn, nhả phanh tay',why:'Máy đã đỡ xe, nên xe không bị trôi lùi. Nếu xe vẫn trôi, thêm ga và nhả thêm chút côn.',keys:['hb'],hl:['hb'],need:[needEngine,needGear('1')],done:s=>!s.hb},
+  {t:'Nhả côn dần, giữ ga, chạy lên đỉnh dốc',why:'Đi tới ô sáng trên đỉnh dốc.',keys:['gas'],hl:['clutch','gas'],need:[needEngine,needGear('1'),needHbOff],done:s=>inZone(s,{x:43,y:-62,w:9,h:3.8})},
+]},
+];
+const FREE={id:'free',name:'Lái tự do',sub:'Toàn bộ sân tập, không có bài',pose:{x:-85,y:2,h:0,engine:false,gear:'N',hb:true},steps:[]};
+
+/* ---------- Trạng thái ---------- */
+const $=id=>document.getElementById(id);
+const s=newCar(),inp=newInput();
+let exam=null,cones=initCones(),lesson=null,stepIdx=0,mem={},stats={stalls:0,cones:0},stepHold=0,finished=false;
+const opt={heading:true,path:true,sound:true,view:'top'};
+let doneSet=new Set();
+try{doneSet=new Set(JSON.parse(localStorage.getItem('sts-done')||'[]'))}catch(e){}
+try{const c=JSON.parse(localStorage.getItem('sts-opt')||'null');if(c)Object.assign(opt,c)}catch(e){}
+function saveLocal(){try{localStorage.setItem('sts-done',JSON.stringify([...doneSet]));localStorage.setItem('sts-opt',JSON.stringify(opt))}catch(e){}}
+const cam={x:0,y:0,a:0,z:13};
+
+function applyPose(p){
+  Object.assign(s,newCar(),{x:p.x,y:p.y,h:p.h,gear:p.gear,hb:p.hb,engine:p.engine,we:p.engine?CAR.idle/RPM:0});
+  s.ev=[];cam.x=p.x;cam.y=p.y;cam.a=p.h;
+  inp.clutchPtr=inp.gasPtr=inp.brakePtr=null;
+}
+function loadLesson(l){
+  lesson=l;hlKey="";stepIdx=0;finished=false;stepHold=0;stats={stalls:0,cones:0};
+  useMap(l.exam?'exam':'yard');exam=null;
+  mem={back:0,h0:l.pose.h,rollback:0};cones=l.exam?[]:initCones();applyPose(l.pose);
+  $('menu').hidden=true;$('lessonBtns').hidden=true;$('need').hidden=true;
+  $('examBox').hidden=!l.exam;$('examBtns').hidden=!l.exam;$('dangerFlash').hidden=true;
+  if(l.exam)startExam(l);
+  renderLesson();
+}
+function chipsHtml(keys){return keys.map(k=>{const[c,txt]=K[k];return`<span><kbd>${c}</kbd> ${txt}</span>`}).join('')}
+function setHL(ids){document.querySelectorAll('[data-hl]').forEach(el=>el.classList.toggle('glow',ids.includes(el.dataset.hl)))}
+function renderLesson(){
+  $('lessonName').textContent=lesson.name;
+  if(lesson.exam){$('dots').hidden=true;renderExam();return}
+  const n=lesson.steps.length;
+  $('dots').innerHTML=lesson.steps.map((_,i)=>`<i class="${i<stepIdx||finished?'done':i===stepIdx?'cur':''}"></i>`).join('');
+  $('dots').hidden=n===0;
+  if(lesson===FREE){
+    $('stepNo').textContent='Không có bài';
+    $('stepText').textContent='Đi đâu tùy ý: cua, dốc, chuồng đều có sẵn';
+    $('stepWhy').textContent='Máy tắt thì đạp côn rồi nổ máy là đi được.';
+    $('stepKeys').innerHTML=chipsHtml(['clutch','bite','gas','brake','steer','hb','ign','bl','br','view','look'])+'<span><kbd>1-5 R N</kbd> vào số</span>';
+    setHL([]);return;
+  }
+  if(finished){
+    $('stepNo').textContent='Hoàn thành';
+    $('stepText').textContent=lesson.name+': xong';
+    const parts=[`Chết máy ${stats.stalls} lần`];
+    if(lesson.bay)parts.push(`đụng ${stats.cones} cọc`);
+    if(lesson.id==='hill')parts.push(`xe trôi lùi ${mem.rollback.toFixed(1)} m`);
+    $('stepWhy').textContent=parts.join(', ')+'.';$('stepKeys').innerHTML='';setHL([]);
+    const nxt=LESSONS[LESSONS.indexOf(lesson)+1];
+    $('lessonBtns').hidden=false;
+    $('lessonBtns').innerHTML=(nxt?`<button class="primary" id="btnNext">Bài tiếp: ${nxt.name}</button>`:'<button class="primary" id="btnNext">Lái tự do</button>')+'<button class="ghost" id="btnAgain">Làm lại</button>';
+    $('btnNext').onclick=()=>loadLesson(nxt||FREE);$('btnAgain').onclick=()=>loadLesson(lesson);
+    return;
+  }
+  const st=lesson.steps[stepIdx];
+  $('stepNo').textContent=`BƯỚC ${stepIdx+1} / ${n}`;
+  $('stepText').textContent=st.t;$('stepWhy').textContent=st.why;
+  $('stepKeys').innerHTML=chipsHtml(st.keys||[]);
+}
+function tickLesson(dt){
+  if(lesson&&lesson.exam){tickExam(dt);return}
+  if(!lesson||lesson===FREE||finished)return;
+  if(s.v<0)mem.back+=-s.v*dt;
+  if((lesson.id==='bay'||lesson.id==='rev')&&s.v<-1.5)say('Lùi hơi nhanh. Rà phanh cho xe chậm lại.','warn','slowrev');
+  if(lesson.id==='hill'&&!s.hb&&s.v<0){mem.rollback+=-s.v*dt;if(mem.rollback>.6)say('Xe đang trôi lùi. Thêm ga, nhả thêm chút côn.','warn','roll')}
+  const st=lesson.steps[stepIdx];
+  let miss=null;for(const f of st.need||[]){miss=f(s);if(miss)break}
+  const nd=$('need');
+  if(miss){if(nd.textContent!==miss.m)nd.textContent=miss.m;nd.hidden=false;setHLcached(miss.hl);stepHold=0;return}
+  nd.hidden=true;setHLcached(st.hl||[]);
+  if(st.done(s,mem)){stepHold+=dt;if(stepHold>.18){stepHold=0;stepIdx++;snd.tick(880);
+      if(stepIdx>=lesson.steps.length){finished=true;doneSet.add(lesson.id);saveLocal();snd.done();say('Hoàn thành bài!','good','done');nd.hidden=true}
+      renderLesson()}}
+  else stepHold=0;
+}
+let hlKey='';function setHLcached(ids){const k=ids.join();if(k!==hlKey){hlKey=k;setHL(ids)}}
+
+/* ---------- Thông báo ---------- */
+let coachT=0;const lastSay={};
+function say(msg,kind='',key=msg){const now=performance.now();if(lastSay[key]&&now-lastSay[key]<3000)return;lastSay[key]=now;
+  const c=$('coach');c.textContent=msg;c.className=kind;c.style.opacity=1;coachT=now+3400}
+
+/* ---------- Thao tác ---------- */
+function shift(g){
+  if(g===s.gear)return;
+  if(g==='N'){s.gear='N';snd.clunk();return}
+  if(s.clutch<.72){snd.grind();say('Đạp hết côn rồi mới vào số.','bad','noclutch');flash('clutch');return}
+  if(g==='R'&&s.v>.3){snd.grind();say('Dừng hẳn xe rồi mới vào số lùi.','bad','norev');return}
+  if(g!=='R'&&s.v<-.3){snd.grind();say('Xe đang lùi. Dừng lại rồi mới vào số tiến.','bad','nofwd');return}
+  const nr=Math.abs(s.v)/CAR.R*CAR.ratios[g]*CAR.final*RPM;
+  if(nr>6600){snd.grind();say(`Xe đang nhanh quá so với số ${g}. Giảm tốc trước.`,'bad','over');return}
+  s.gear=g;snd.clunk();
+  if(g==='R'&&opt.view==='cab')say('Giữ B để ngoái nhìn phía sau, hoặc xem gương và ô nhìn từ trên.','','cabrev');
+}
+function flash(hl){const el=document.querySelector(`[data-hl="${hl}"]`);if(!el)return;el.classList.add('glow');setTimeout(()=>{el.classList.remove('glow');hlKey=''},1200)}
+function ignition(){
+  snd.init();
+  if(s.engine){s.engine=false;s.crank=0;return}
+  if(s.crank>0)return;
+  if(s.gear!=='N'&&s.clutch<.72){say('Đang vào số. Đạp hết côn hoặc về số N rồi mới nổ máy.','bad','startgear');flash('clutch');snd.clunk();return}
+  s.crank=.55;snd.starter();
+}
+function toggleHb(){s.hb=!s.hb;snd.clunk()}
+function toggleBlink(d){s.blink=s.blink===d?0:d;s.blinkTurn=0;snd.tick(620)}
+function toggleBelt(){s.belt=!s.belt;snd.tick(900)}
+function toggleHazard(){s.hazard=!s.hazard;snd.tick(620)}
+
+const GEARKEY={Digit1:'1',Digit2:'2',Digit3:'3',Digit4:'4',Digit5:'5',Numpad1:'1',Numpad2:'2',Numpad3:'3',Numpad4:'4',Numpad5:'5',KeyR:'R',KeyN:'N',Digit0:'N',Numpad0:'N'};
+addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const c=e.code;
+  if(c==='Escape'){$('menu').hidden=true;return}
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(c))e.preventDefault();
+  snd.init();
+  switch(c){
+    case'KeyI':case'ArrowUp':inp.gasKey=true;break;
+    case'KeyK':case'ArrowDown':inp.brakeKey=true;break;
+    case'KeyJ':case'ArrowLeft':inp.left=true;break;
+    case'KeyL':case'ArrowRight':inp.right=true;break;
+    case'Space':inp.clutchKey=true;break;
+    case'KeyX':inp.biteKey=true;break;
+    case'KeyB':look.back=true;break;
+  }
+  if(e.repeat)return;
+  if(c==='KeyV')toggleView();
+  if(GEARKEY[c])shift(GEARKEY[c]);
+  if(c==='KeyT')toggleBelt();if(c==='KeyG')toggleHazard();
+  if(c==='KeyF')ignition();if(c==='KeyH')toggleHb();if(c==='KeyQ')toggleBlink(-1);if(c==='KeyE')toggleBlink(1);
+});
+addEventListener('keyup',e=>{
+  const c=e.code;if(c==='Space')e.preventDefault();
+  switch(c){
+    case'KeyI':case'ArrowUp':inp.gasKey=false;break;
+    case'KeyK':case'ArrowDown':inp.brakeKey=false;break;
+    case'KeyJ':case'ArrowLeft':inp.left=false;break;
+    case'KeyL':case'ArrowRight':inp.right=false;break;
+    case'Space':inp.clutchKey=false;break;
+    case'KeyX':inp.biteKey=false;break;
+    case'KeyB':look.back=false;break;
+  }
+});
+addEventListener('blur',()=>{look.back=false;Object.assign(inp,{gasKey:false,brakeKey:false,clutchKey:false,biteKey:false,left:false,right:false})});
+
+/* Nút điều khiển ăn ngay khi chạm. Trình duyệt không tạo sự kiện click khi đang có ngón khác giữ
+   trên màn hình, mà người lái luôn phải giữ côn trong lúc vào số hoặc nhả phanh tay. */
+function press(el,fn){
+  el.addEventListener('pointerdown',e=>{if(e.button)return;snd.init();fn()});
+  el.addEventListener('click',e=>{if(e.detail===0){snd.init();fn()}if(el.blur)el.blur()});
+}
+const PED={};
+document.querySelectorAll('.pedal').forEach(p=>{
+  const name=p.dataset.p,track=p.querySelector('.track'),key=name+'Ptr';
+  PED[name]={plate:p.querySelector('.plate'),fill:p.querySelector('.fill'),pv:p.querySelector('.pv'),track};
+  const val=e=>{const r=track.getBoundingClientRect();return clamp((e.clientY-r.top-15)/(r.height-30),0,1)};
+  track.addEventListener('pointerdown',e=>{snd.init();track.setPointerCapture(e.pointerId);inp[key]=val(e);e.preventDefault()});
+  track.addEventListener('pointermove',e=>{if(inp[key]!=null)inp[key]=val(e)});
+  const up=()=>{inp[key]=null};track.addEventListener('pointerup',up);track.addEventListener('pointercancel',up);
+});
+{ /* Cần số */
+  const POS={'1':[25,25],'3':[60,25],'5':[95,25],'N':[60,75],'2':[25,125],'4':[60,125],'R':[95,125]};
+  const g=$('slots');
+  for(const k in POS){
+    const[x,y]=POS[k];const el=document.createElementNS('http://www.w3.org/2000/svg','g');
+    el.setAttribute('class','slot');el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label',k==='N'?'Số mo':k==='R'?'Số lùi':'Số '+k);
+    el.innerHTML=`<circle cx="${x}" cy="${y}" r="16"></circle><text x="${x}" y="${y}">${k}</text>`;
+    press(el,()=>shift(k));
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'){shift(k)}});
+    g.appendChild(el);
+  }
+  window.__POS=POS;
+}
+{ /* Vô lăng */
+  const w=$('wheelWrap');let prev=0;
+  const ang=e=>{const r=w.getBoundingClientRect();return Math.atan2(e.clientY-r.top-r.height/2,e.clientX-r.left-r.width/2)};
+  w.addEventListener('pointerdown',e=>{snd.init();w.setPointerCapture(e.pointerId);inp.wheelPtr=true;prev=ang(e);w.style.cursor='grabbing'});
+  w.addEventListener('pointermove',e=>{if(!inp.wheelPtr)return;const a=ang(e);let d=a-prev;if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;prev=a;s.steer=clamp(s.steer+d/(3*Math.PI),-1,1)});
+  const up=()=>{inp.wheelPtr=false;w.style.cursor='grab'};w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up);
+}
+press($('btnIgn'),ignition);
+press($('btnHb'),toggleHb);
+press($('blinkL'),()=>toggleBlink(-1));
+press($('blinkR'),()=>toggleBlink(1));
+press($('btnBelt'),toggleBelt);
+press($('btnHaz'),toggleHazard);
+$('btnRestart').onclick=e=>{loadLesson(lesson);e.currentTarget.blur()};
+$('btnMin').onclick=e=>{const m=$('lesson').classList.toggle('min');e.currentTarget.textContent=m?'Mở rộng':'Thu gọn';e.currentTarget.setAttribute('aria-pressed',m);e.currentTarget.blur()};
+function openMenu(){
+  const list=$('menuList');list.innerHTML='';
+  const add=(l,no)=>{
+    const b=document.createElement('button');const d=doneSet.has(l.id);
+    b.className='mitem'+(d?' done':'');
+    b.innerHTML=`<span class="tick">${d?'✓':no}</span><span><b>${l.name}</b><small>${l.sub}</small></span>`;
+    b.onclick=()=>loadLesson(l);list.appendChild(b);
+  };
+  const head=t=>{const h=document.createElement('div');h.className='mhead';h.textContent=t;list.appendChild(h)};
+  LESSONS.forEach((l,i)=>add(l,i+1));add(FREE,'');
+  head('Thi sa hình hạng B');add(EXAM_FULL,'');
+  head('Luyện từng bài thi');EXAM_SINGLES.forEach((l,i)=>add(l,i+1));
+  const note=document.createElement('p');note.className='mnote';note.textContent=EXAM_NOTE;list.appendChild(note);
+  $('menu').hidden=false;
+}
+$('lessonName').onclick=openMenu;
+$('menuClose').onclick=()=>{$('menu').hidden=true};
+$('menu').addEventListener('click',e=>{if(e.target===$('menu'))$('menu').hidden=true});
+function toggleView(){opt.view=opt.view==='cab'?'top':'cab';look.back=false;look.drag=0;syncOpts();saveLocal()}
+$('optView').onclick=e=>{toggleView();e.currentTarget.blur()};
+{ /* Nhìn sau và kéo để nhìn quanh trong khoang lái */
+  const b=$('btnLook');
+  b.addEventListener('pointerdown',e=>{b.setPointerCapture(e.pointerId);look.back=true;e.preventDefault()});
+  const off=()=>{look.back=false};b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);
+  const w=$('world');let px=null;
+  w.addEventListener('pointerdown',e=>{if(opt.view!=='cab')return;w.setPointerCapture(e.pointerId);px=e.clientX});
+  w.addEventListener('pointermove',e=>{if(px==null)return;look.drag=clamp(look.drag-(e.clientX-px)*.005,-1.9,1.9);px=e.clientX});
+  const end=()=>{px=null;look.drag=0};w.addEventListener('pointerup',end);w.addEventListener('pointercancel',end);
+}
+function syncOpts(){
+  const cab=opt.view==='cab';
+  $('optView').firstChild.textContent=cab?'Về nhìn từ trên ':'Vào khoang lái ';
+  $('optCam').hidden=cab;$('btnLook').hidden=!cab;
+  $('mini').classList.toggle('pip',cab);$('world').classList.toggle('cab',cab);
+  $('optCam').textContent=opt.heading?'Xe luôn hướng lên':'Bản đồ cố định';
+  $('optPath').setAttribute('aria-pressed',opt.path);$('optSnd').setAttribute('aria-pressed',opt.sound);
+}
+$('optCam').onclick=e=>{opt.heading=!opt.heading;syncOpts();saveLocal();e.currentTarget.blur()};
+$('optPath').onclick=e=>{opt.path=!opt.path;syncOpts();saveLocal();e.currentTarget.blur()};
+$('optSnd').onclick=e=>{opt.sound=!opt.sound;snd.init();syncOpts();saveLocal();e.currentTarget.blur()};
+
+/* ---------- Âm thanh ---------- */
+const snd={ac:null,
+  init(){if(this.ac){if(this.ac.state==='suspended')this.ac.resume();return}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    try{const a=this.ac=new AC();
+      this.master=a.createGain();this.master.gain.value=.55;this.master.connect(a.destination);
+      this.eg=a.createGain();this.eg.gain.value=0;this.flt=a.createBiquadFilter();this.flt.type='lowpass';this.flt.frequency.value=300;
+      this.o1=a.createOscillator();this.o1.type='sawtooth';this.o2=a.createOscillator();this.o2.type='square';
+      const g2=a.createGain();g2.gain.value=.55;
+      this.o1.connect(this.flt);this.o2.connect(g2);g2.connect(this.flt);this.flt.connect(this.eg);this.eg.connect(this.master);
+      this.o1.start();this.o2.start();
+      const len=a.sampleRate*.5,buf=a.createBuffer(1,len,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;this.noise=buf;
+    }catch(e){this.ac=null}},
+  tone(f,t,v=.12,type='sine',f2){if(!this.ac||!opt.sound)return;const a=this.ac,o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;if(f2)o.frequency.exponentialRampToValueAtTime(f2,a.currentTime+t);g.gain.setValueAtTime(v,a.currentTime);g.gain.exponentialRampToValueAtTime(.0008,a.currentTime+t);o.connect(g);g.connect(this.master);o.start();o.stop(a.currentTime+t)},
+  nz(t,f,q,v){if(!this.ac||!opt.sound)return;const a=this.ac,n=a.createBufferSource(),b=a.createBiquadFilter(),g=a.createGain();n.buffer=this.noise;n.loop=true;b.type='bandpass';b.frequency.value=f;b.Q.value=q;g.gain.setValueAtTime(v,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+t);n.connect(b);b.connect(g);g.connect(this.master);n.start();n.stop(a.currentTime+t)},
+  tick(f=700){this.tone(f,.05,.1,'square')},
+  clunk(){this.tone(130,.09,.28,'triangle',60);this.nz(.05,1200,1,.1)},
+  grind(){this.nz(.32,2600,6,.5);this.tone(420,.3,.08,'sawtooth',280)},
+  starter(){for(let i=0;i<6;i++)setTimeout(()=>this.tone(95,.075,.2,'sawtooth',70),i*85)},
+  thud(){this.tone(75,.3,.45,'sine',32);this.nz(.15,300,1,.25)},
+  done(){this.tone(660,.14,.14);setTimeout(()=>this.tone(990,.24,.14),130)},
+  update(){if(!this.ac)return;const rpm=s.we*RPM,t=this.ac.currentTime,on=s.engine&&opt.sound;
+    const f=Math.max(18,rpm/30);this.o1.frequency.setTargetAtTime(f,t,.02);this.o2.frequency.setTargetAtTime(f/2,t,.02);
+    this.flt.frequency.setTargetAtTime(170+rpm*.22+s.gas*500,t,.04);
+    this.eg.gain.setTargetAtTime(on?.1+s.gas*.14+Math.min(rpm/6500,1)*.07:0,t,.04);}
+};
+document.addEventListener('visibilitychange',()=>{if(snd.ac){document.hidden?snd.ac.suspend():snd.ac.resume()}});
+
+/* ---------- Vẽ ---------- */
+const dpr=()=>Math.min(window.devicePixelRatio||1,2);
+function fit(cv){const r=cv.getBoundingClientRect(),d=dpr(),w=Math.round(r.width*d),h=Math.round(r.height*d);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}return{w:r.width,h:r.height,d}}
+function speckle(base,dots,size,scale){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,size,size);
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(const[col,n,r]of dots){x.fillStyle=col;for(let i=0;i<n;i++){x.beginPath();x.arc(rnd()*size,rnd()*size,rnd()*r+.4,0,7);x.fill()}}
+  const wc=$('world').getContext('2d'),p=wc.createPattern(c,'repeat');p.setTransform(new DOMMatrix().scale(scale));return p}
+const wctx=$('world').getContext('2d');
+const PAT={
+  grass:speckle('#5c7a44',[['#54703e',900,2.6],['#67864c',800,2],['#4c6838',260,3.2]],256,1/9),
+  out:speckle('#47603a',[['#3f5634',800,2.6],['#50693f',500,2]],256,1/9),
+  road:speckle('#3b4045',[['#34383d',1400,1.3],['#454a50',1200,1.1],['#2d3135',300,1.5]],256,1/18),
+};
+function dashPath(c,x1,y1,x2,y2){c.moveTo(x1,y1);c.lineTo(x2,y2)}
+function drawGround(c){
+  if(curMap==='exam'){drawExamGround(c);return}
+  c.fillStyle=PAT.grass;c.fillRect(-WALL.x,-WALL.y,WALL.x*2,WALL.y*2);
+  // Mép đường
+  c.lineJoin='round';c.lineCap='butt';
+  const road=()=>{c.beginPath();c.moveTo(-100,-60);c.lineTo(100,-60);c.lineTo(100,60);c.lineTo(-100,60);c.closePath();c.moveTo(-100,0);c.lineTo(100,0);c.moveTo(0,-60);c.lineTo(0,60)};
+  c.strokeStyle='#eceee8';c.lineWidth=RW+.3;road();c.stroke();
+  c.strokeStyle=PAT.road;c.lineWidth=RW;road();c.stroke();
+  // Dốc
+  const hillRect=(a,b,uphillWest)=>{
+    c.save();c.beginPath();c.rect(a,-64,b-a,8);c.clip();
+    c.fillStyle=uphillWest?'#00000033':'#ffffff14';c.fillRect(a,-64,b-a,8);
+    c.strokeStyle='#ffb53d66';c.lineWidth=.35;
+    for(let x=a+1;x<b;x+=3){c.beginPath();const d=uphillWest?-1:1;c.moveTo(x-d,-63.4);c.lineTo(x+d*.5,-60);c.lineTo(x-d,-56.6);c.stroke()}
+    c.restore();};
+  hillRect(HILL.up[0],HILL.up[1],true);hillRect(HILL.down[0],HILL.down[1],false);
+  c.fillStyle='#ffffff10';c.fillRect(HILL.down[1],-64,HILL.up[0]-HILL.down[1],8);
+  // Nét đứt giữa đường
+  c.strokeStyle='#f0c23c';c.lineWidth=.16;c.setLineDash([2,2]);c.beginPath();for(const d of DASHES)dashPath(c,...d);c.stroke();c.setLineDash([]);
+  // Vạch dừng
+  c.strokeStyle='#f4f5f0';c.lineWidth=.45;c.beginPath();
+  dashPath(c,-8,0,-8,4);dashPath(c,8,0,8,-4);dashPath(c,0,-8,-4,-8);dashPath(c,0,8,4,8);c.stroke();
+  // Vạch dừng dốc
+  c.beginPath();c.moveTo(52,-64);c.lineTo(52,-60);c.stroke();
+  // Chuồng
+  c.fillStyle='#ffffff0d';c.fillRect(BAY.x0,BAY.y0,BAY.x1-BAY.x0,BAY.y1-BAY.y0);
+  c.strokeStyle='#f4f5f0';c.lineWidth=.14;c.beginPath();c.moveTo(BAY.x0,BAY.y0);c.lineTo(BAY.x0,BAY.y1);c.lineTo(BAY.x1,BAY.y1);c.lineTo(BAY.x1,BAY.y0);c.stroke();
+  paintText(c,'CHUỒNG',(BAY.x0+BAY.x1)/2,BAY.y1+1.5,.8,'#f4f5f0cc');
+  paintText(c,'DỐC 10%',59,-54,.95,'#ffb53d');
+  drawScenery(c);
+}
+function drawScenery(c){
+  // Tường rào
+  c.strokeStyle='#c9ced1';c.lineWidth=.5;c.setLineDash([3,1.2]);c.strokeRect(-WALL.x,-WALL.y,WALL.x*2,WALL.y*2);c.setLineDash([]);
+  // Nhà
+  for(const[a,b,w,h]of BLDS){
+    c.fillStyle='#00000033';c.fillRect(a+.8,b+.8,w,h);
+    c.fillStyle='#b5543c';c.fillRect(a,b,w,h);
+    c.fillStyle='#c76750';c.fillRect(a,b,w,h/2);
+    c.strokeStyle='#8f3f2c';c.lineWidth=.25;c.strokeRect(a,b,w,h);c.beginPath();c.moveTo(a,b+h/2);c.lineTo(a+w,b+h/2);c.stroke();
+    paintText(c,'TRƯỜNG LÁI',a+w/2,b+h/2,2,'#fff4e6');
+  }
+  // Cây
+  for(const[a,b,r]of TREES){
+    c.fillStyle='#00000030';c.beginPath();c.arc(a+.7,b+.7,r,0,7);c.fill();
+    c.fillStyle='#3c6030';c.beginPath();c.arc(a,b,r,0,7);c.fill();
+    c.fillStyle='#4c7a3a';c.beginPath();c.arc(a-r*.2,b-r*.2,r*.68,0,7);c.fill();
+    c.fillStyle='#5d9046';c.beginPath();c.arc(a-r*.34,b-r*.34,r*.35,0,7);c.fill();
+  }
+}
+function paintText(c,t,x,y,size,col){
+  c.save();c.translate(x,y);
+  if(opt.heading)c.rotate(cam.a+Math.PI/2);
+  c.scale(size/20,size/20);c.fillStyle=col;c.font='700 20px "Chakra Petch","Segoe UI",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(t,0,0);c.restore();
+}
+function drawCones(c){for(const k of cones){
+  c.fillStyle='#00000040';c.beginPath();c.arc(k.x+.05,k.y+.05,.26,0,7);c.fill();
+  c.fillStyle=k.hit?'#8d4a24':'#ff7a1a';c.beginPath();c.arc(k.x,k.y,.24,0,7);c.fill();
+  c.fillStyle='#fff';c.beginPath();c.arc(k.x,k.y,.11,0,7);c.fill();
+}}
+function drawZone(c,t){
+  const z=lesson&&!finished&&lesson.zone;if(!z)return;
+  const p=.5+.5*Math.sin(t/300);
+  c.fillStyle=`rgba(255,181,61,${.18+p*.22})`;c.fillRect(z.x-z.w/2,z.y-z.h/2,z.w,z.h);
+  c.strokeStyle='#ffb53d';c.lineWidth=.22;c.strokeRect(z.x-z.w/2,z.y-z.h/2,z.w,z.h);
+}
+function drawBayHint(c,t){
+  if(!lesson||!lesson.bay||finished)return;const p=.5+.5*Math.sin(t/300);
+  c.fillStyle=`rgba(255,181,61,${.1+p*.14})`;c.fillRect(BAY.x0,BAY.y0,BAY.x1-BAY.x0,BAY.y1-BAY.y0);
+}
+function pathPoints(){
+  const rev=s.gear==='R'||(s.v<-.2),dir=rev?-1:1;
+  const d=steerAngle(s),k=Math.tan(d)/CAR.L,w=CAR.width/2,inSide=d>=0?1:-1;
+  const len=rev?9:14,reach=len+(rev?CAR.rear:CAR.front);
+  // Vết của một điểm trên thân xe (a dọc xe, b ngang xe) khi xe đi hết quãng dist
+  const trail=(a,b,dist)=>{
+    const P=[],n=Math.ceil(dist/.25);
+    for(let i=0;i<=n;i++){
+      const t=dir*dist*i/n,h=s.h+k*t,c=Math.cos(h),o=Math.sin(h);
+      const x=s.x+(Math.abs(k)<1e-6?t*Math.cos(s.h):(o-Math.sin(s.h))/k);
+      const y=s.y+(Math.abs(k)<1e-6?t*Math.sin(s.h):(Math.cos(s.h)-c)/k);
+      P.push([x+a*c-b*o,y+a*o+b*c]);
+    }
+    return P;
+  };
+  // Dải thân xe quét qua: mép ngoài là góc cản trước phía ngoài cua, mép trong là hông xe ngang bánh sau phía trong cua. Khi lùi vẫn đúng hai điểm này, nên thấy được đầu xe văng ra.
+  const outer=trail(CAR.front,-inSide*w,rev?reach+CAR.front:len);
+  const inner=trail(0,inSide*w,reach);
+  return inSide>0?{L:outer,R:inner,rev}:{L:inner,R:outer,rev};
+}
+function drawPath(c){
+  if(!opt.path||(!s.engine&&s.v===0))return;
+  const{L,R,rev}=pathPoints();
+  c.lineWidth=.13;c.lineCap='round';c.setLineDash([.55,.45]);c.strokeStyle=rev?'#ff9d2e':'#8df0a2';
+  for(const P of[L,R]){c.beginPath();P.forEach(([a,b],i)=>i?c.lineTo(a,b):c.moveTo(a,b));c.stroke()}
+  c.setLineDash([]);c.lineCap='butt';
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r)}
+function drawCar(c,t){
+  c.save();c.translate(s.x,s.y);c.rotate(s.h);
+  const W=CAR.width,F=CAR.front,Rr=-CAR.rear,len=F-Rr;
+  c.fillStyle='#00000045';rr(c,Rr+.08,-W/2+.14,len,W,.45);c.fill();
+  const wheel=(x,y,a)=>{c.save();c.translate(x,y);c.rotate(a);c.fillStyle='#14171a';rr(c,-.33,-CAR.tire/2,.66,CAR.tire,.05);c.fill();c.restore()};
+  const st=steerAngle(s),wy=CAR.wheelFace-CAR.tire/2;
+  c.fillStyle='#f4f5f2';rr(c,Rr,-W/2+.04,len,W-.08,[.5,.65,.65,.5]);c.fill();
+  c.strokeStyle='#b8bfc4';c.lineWidth=.03;c.stroke();
+  // Nắp capô và kính
+  c.fillStyle='#e4e7e6';rr(c,2.2,-W/2+.2,1.15,W-.4,.3);c.fill();
+  c.fillStyle='#2b3a47';c.beginPath();c.moveTo(2.1,-.66);c.quadraticCurveTo(2.32,0,2.1,.66);c.lineTo(1.5,.56);c.lineTo(1.5,-.56);c.closePath();c.fill();
+  c.beginPath();c.moveTo(-.2,-.6);c.lineTo(-.48,-.52);c.quadraticCurveTo(-.56,0,-.48,.52);c.lineTo(-.2,.6);c.closePath();c.fill();
+  c.fillStyle='#fbfcfa';rr(c,-.2,-.62,1.7,1.24,.15);c.fill();
+  // Biển tập lái trên nóc
+  c.fillStyle='#1b63b8';rr(c,.3,-.46,.72,.92,.05);c.fill();
+  c.save();c.translate(.66,0);c.rotate(Math.PI/2);c.scale(.0118,.0118);c.fillStyle='#fff';c.font='700 20px "Chakra Petch","Segoe UI",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('TẬP',0,-11);c.fillText('LÁI',0,11);c.restore();
+  // Bốn bánh vẽ nổi để thấy vị trí bánh và góc lái
+  wheel(0,wy,0);wheel(0,-wy,0);
+  wheel(CAR.L,wy,st);wheel(CAR.L,-wy,st);
+  c.save();c.strokeStyle='#ffb53d';c.lineWidth=.04;
+  for(const y of[wy,-wy]){c.save();c.translate(CAR.L,y);c.rotate(st);c.beginPath();c.moveTo(-.33,0);c.lineTo(.33,0);c.stroke();c.restore()}
+  c.restore();
+  // Đèn
+  c.fillStyle='#fff6c8';c.fillRect(F-.09,-W/2+.16,.07,.34);c.fillRect(F-.09,W/2-.5,.07,.34);
+  const braking=s.brake>.05;
+  c.fillStyle=braking?'#ff2a1f':'#7a1c18';c.fillRect(Rr+.02,-W/2+.14,.08,.38);c.fillRect(Rr+.02,W/2-.52,.08,.38);
+  if(braking){c.fillStyle='#ff2a1f55';c.beginPath();c.arc(Rr,-W/2+.33,.42,0,7);c.arc(Rr,W/2-.33,.42,0,7);c.fill()}
+  if(s.gear==='R'){c.fillStyle='#ffffff';c.fillRect(Rr+.02,-.3,.08,.18);c.fillRect(Rr+.02,.12,.08,.18);c.fillStyle='#ffffff40';c.beginPath();c.arc(Rr,0,.55,0,7);c.fill()}
+  if((s.blink||s.hazard)&&Math.floor(t/380)%2===0){
+    for(const sd of s.hazard?[1,-1]:[s.blink]){
+      const y=sd>0?W/2-.1:-W/2+.1;
+      c.fillStyle='#ffb000';c.beginPath();c.arc(F-.14,y,.13,0,7);c.arc(Rr+.14,y,.13,0,7);c.fill();
+      c.fillStyle='#ffb00055';c.beginPath();c.arc(F-.14,y,.34,0,7);c.arc(Rr+.14,y,.34,0,7);c.fill();
+    }
+  }
+  c.restore();
+}
+function updateCam(w,h){
+  const speed=Math.abs(s.v);
+  const base=Math.min(w,h)<520?10.5:14;
+  const zt=base*clamp(1.15-speed/22,.58,1.15);cam.z+=(zt-cam.z)*.03;
+  const la=clamp(s.v*.5,-6,9),tx=s.x+Math.cos(s.h)*(1.3+la),ty=s.y+Math.sin(s.h)*(1.3+la);
+  cam.x+=(tx-cam.x)*.12;cam.y+=(ty-cam.y)*.12;
+  let da=s.h-cam.a;da=Math.atan2(Math.sin(da),Math.cos(da));cam.a+=da*.08;
+}
+function drawWorld(t){
+  const cv=$('world'),{w,h,d}=fit(cv),c=wctx;
+  c.setTransform(d,0,0,d,0,0);c.fillStyle='#47603a';c.fillRect(0,0,w,h);
+  updateCam(w,h);
+  const ax=w>900&&lesson?w*.56:w*.5;const ay=h*(opt.heading?.62:.52);
+  c.save();c.translate(ax,ay);c.scale(cam.z,cam.z);
+  if(opt.heading)c.rotate(-(cam.a+Math.PI/2));
+  c.translate(-cam.x,-cam.y);
+  drawOutside(c);drawGround(c);drawZone(c,t);drawBayHint(c,t);drawCones(c);drawPath(c);drawCar(c,t);
+  c.restore();
+}
+function drawOutside(c){c.fillStyle=PAT.out;c.fillRect(-WALL.x-200,-WALL.y-200,WALL.x*2+400,WALL.y*2+400)}
+function drawMini(t){
+  const m=$('mini');if(!m.offsetParent)return;
+  const fm=fit(m);
+  if(opt.view==='cab'){ /* Ô nhìn từ trên, bám sát xe, để căn vị trí khi lùi và rẽ */
+    if(mirTick%2)return;
+    const c=m.getContext('2d');c.setTransform(1,0,0,1,0,0);c.fillStyle='#47603a';c.fillRect(0,0,m.width,m.height);
+    c.save();c.translate(m.width/2,m.height*.55);c.scale(fm.d*5.2,fm.d*5.2);
+    if(opt.heading)c.rotate(-(cam.a+Math.PI/2));
+    c.translate(-(s.x+Math.cos(s.h)*1.3),-(s.y+Math.sin(s.h)*1.3));
+    drawOutside(c);drawGround(c);drawZone(c,t);drawBayHint(c,t);drawCones(c);drawPath(c);drawCar(c,t);
+    c.restore();return;
+  }
+  const c=m.getContext('2d'),W=m.width,H=m.height,k=Math.min(W/(WALL.x*2+10),H/(WALL.y*2+10));
+  c.clearRect(0,0,W,H);c.save();c.translate(W/2,H/2);c.scale(k,k);
+  c.strokeStyle='#7d8a96';c.lineWidth=RW;c.lineJoin='round';
+  if(curMap==='exam'){
+    for(const st of STRIPS){c.lineWidth=st.w;c.beginPath();st.p.forEach(([a,b],i)=>i?c.lineTo(a,b):c.moveTo(a,b));c.stroke()}
+    c.fillStyle='#ffb53d55';c.fillRect(HILL.down[0],HILL.yMin,HILL.up[1]-HILL.down[0],HILL.yMax-HILL.yMin);
+    c.fillStyle='#fff';for(const b of[EX_DOC,EX_NGANG])c.fillRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);
+  }else{
+  c.beginPath();c.rect(-100,-60,200,120);c.moveTo(-100,0);c.lineTo(100,0);c.moveTo(0,-60);c.lineTo(0,60);c.stroke();
+  c.fillStyle='#ffb53d55';c.fillRect(HILL.down[0],-64,HILL.up[1]-HILL.down[0],8);
+  c.fillStyle='#fff';c.fillRect(BAY.x0-1,BAY.y0,BAY.x1-BAY.x0+2,BAY.y1-BAY.y0);
+  }
+  const z=lesson&&!finished&&lesson.zone;
+  if(z){c.fillStyle='#ffb53d';c.fillRect(z.x-z.w/2,z.y-z.h/2,z.w,z.h)}
+  c.translate(s.x,s.y);c.rotate(s.h);c.fillStyle='#fff';c.strokeStyle='#000';c.lineWidth=2;c.beginPath();c.moveTo(11,0);c.lineTo(-6,6.5);c.lineTo(-6,-6.5);c.closePath();c.stroke();c.fill();
+  c.restore();
+}
+function drawWheel(){
+  const cv=$('wheelCv'),{w,h,d}=fit(cv),c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
+  const r=Math.min(w,h)/2-3;if(r<8)return;c.translate(w/2,h/2);c.rotate(s.steer*3*Math.PI);
+  c.lineWidth=r*.17;c.strokeStyle='#0c1014';c.beginPath();c.arc(0,0,r*.9,0,7);c.stroke();
+  c.lineWidth=r*.04;c.strokeStyle='#39454f';c.beginPath();c.arc(0,0,r*.98,0,7);c.stroke();
+  c.fillStyle='#232c35';
+  for(const a of[Math.PI/2,Math.PI*1.08,-.08*Math.PI]){c.save();c.rotate(a);c.fillRect(0,-r*.09,r*.82,r*.18);c.restore()}
+  c.beginPath();c.arc(0,0,r*.28,0,7);c.fillStyle='#2c3741';c.fill();c.strokeStyle='#4b5965';c.lineWidth=1;c.stroke();
+  c.fillStyle='#ffb53d';c.fillRect(-r*.05,-r*.99,r*.1,r*.2);
+}
+function dial(c,x,y,r,val,max,step,col,bands,label,big,sub){
+  const a0=Math.PI*.75,span=Math.PI*1.5,ang=v=>a0+span*Math.min(v,max)/max;
+  c.fillStyle='#0d1218';c.beginPath();c.arc(x,y,r,0,7);c.fill();c.strokeStyle='#384552';c.lineWidth=1.5;c.stroke();
+  for(const[a,b,cl]of bands){c.strokeStyle=cl;c.lineWidth=Math.max(2.5,r*.07);c.beginPath();c.arc(x,y,r*.88,ang(a),ang(b));c.stroke()}
+  c.textAlign='center';c.textBaseline='middle';
+  if(r>42){
+    c.fillStyle='#cdd7de';c.font=`600 ${Math.round(r*.15)}px "Chakra Petch",sans-serif`;
+    for(let v=0;v<=max;v+=step){const a=ang(v);
+      c.strokeStyle='#cdd7de';c.lineWidth=1.3;c.beginPath();c.moveTo(x+Math.cos(a)*r*.82,y+Math.sin(a)*r*.82);c.lineTo(x+Math.cos(a)*r*.72,y+Math.sin(a)*r*.72);c.stroke();
+      c.fillText(label(v),x+Math.cos(a)*r*.58,y+Math.sin(a)*r*.58)}
+  }
+  const a=ang(val);c.strokeStyle=col;c.lineWidth=Math.max(2,r*.045);c.lineCap='round';c.beginPath();c.moveTo(x-Math.cos(a)*r*.1,y-Math.sin(a)*r*.1);c.lineTo(x+Math.cos(a)*r*.8,y+Math.sin(a)*r*.8);c.stroke();c.lineCap='butt';
+  c.fillStyle='#2b3640';c.beginPath();c.arc(x,y,r*.09,0,7);c.fill();
+  c.fillStyle='#fff';c.font=`700 ${Math.round(r*(r>42?.3:.4))}px "Chakra Petch",sans-serif`;c.fillText(big,x,y+r*.56);
+  c.fillStyle='#9caab6';c.font=`600 ${Math.max(8,Math.round(r*.13))}px "Chakra Petch",sans-serif`;c.fillText(sub,x,y+r*.82);
+}
+function drawGauges(){
+  const cv=$('gaugeCv'),{w,h,d}=fit(cv),c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
+  const r=Math.min(h/2-2,(w-46)/4-2);if(r<14)return;
+  const rpm=s.we*RPM,y=h/2;
+  dial(c,r+3,y,r,rpm/1000,7,1,'#ffb53d',[[0,.65,'#ef5b4c88'],[1.8,3,'#5dcb7399'],[5.5,7,'#f0604f']],v=>v,Math.round(rpm/10)*10+'','vòng/phút');
+  dial(c,w-r-3,y,r,kmh(s),100,20,'#ffb53d',[],v=>v,Math.round(kmh(s))+'','km/h');
+  const mx=w/2;
+  c.fillStyle='#0d1218';c.strokeStyle=s.gear==='R'?'#ff9d2e':'#384552';c.lineWidth=1.5;rr(c,mx-17,y-22,34,44,6);c.fill();c.stroke();
+  c.fillStyle=s.gear==='R'?'#ff9d2e':'#ffb53d';c.font='700 27px "Chakra Petch",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(s.gear,mx,y+1);
+}
+let phE=0,phW=0;
+function drawDrive(){
+  const cv=$('driveCv');if(!cv.offsetParent)return;
+  const{w,h,d}=fit(cv),c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
+  const e=clutchEngage(s.clutch),G=CAR.ratios[s.gear],rpm=s.we*RPM,y=h*.5,H=Math.min(h-14,64);
+  phE+=rpm*.00028;phW+=s.v*.09;
+  const engW=w*.22,gx=w*.46,gbW=w*.18,wheelX=w-Math.min(H*.5,w*.11)-2,R=Math.min(H*.5,w*.11);
+  // máy
+  c.fillStyle='#2c3741';rr(c,0,y-H/2,engW,H,5);c.fill();
+  c.fillStyle='#fff';c.font='600 11px "Be Vietnam Pro",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('Máy',engW/2,y-H*.18);
+  c.fillStyle=s.engine?'#ffb53d':'#9caab6';c.font='700 13px "Chakra Petch",sans-serif';c.fillText(s.engine?Math.round(rpm/10)*10:'Tắt',engW/2,y+H*.18);
+  // Trục máy và đĩa bánh đà
+  const fx=engW+7,gap=(1-e)*Math.min(16,w*.05)+1.5;
+  c.fillStyle='#57626c';c.fillRect(engW,y-3,7,6);
+  const disc=(x,col2,ph)=>{const dh=H*.86;c.fillStyle=col2;rr(c,x,y-dh/2,6,dh,2);c.fill();
+    const my=y+Math.sin(ph*6.28)*dh*.42;c.fillStyle='#fff';c.fillRect(x,my-2,6,4)};
+  disc(fx,'#7f8c97',phE);
+  // Đĩa côn
+  const inRpm=G!==0?Math.abs(s.v)/CAR.R*Math.abs(G)*CAR.final*RPM:(e>.5?rpm:rpm*e);
+  window.__phC=(window.__phC||0)+inRpm*.00028;
+  const cx=fx+6+gap;disc(cx,e>.02?'#54b9ec':'#3b6f8c',window.__phC);
+  c.fillStyle='#57626c';c.fillRect(cx+6,y-3,gx-cx-6,6);
+  // Hộp số
+  c.fillStyle=G===0?'#2c3741':'#34414d';rr(c,gx,y-H/2,gbW,H,5);c.fill();
+  c.fillStyle='#fff';c.font='600 10px "Be Vietnam Pro",sans-serif';c.fillText('Số',gx+gbW/2,y-H*.22);
+  c.fillStyle='#ffb53d';c.font='700 19px "Chakra Petch",sans-serif';c.fillText(s.gear,gx+gbW/2,y+H*.14);
+  // Trục ra bánh
+  const on=G!==0;
+  c.fillStyle=on?'#57626c':'#2c3741';c.fillRect(gx+gbW,y-3,wheelX-R-gx-gbW,6);
+  if(!on){c.fillStyle='#f0604f';c.font='700 13px "Chakra Petch",sans-serif';c.fillText('✕',(gx+gbW+wheelX-R)/2,y-11)}
+  // Bánh
+  c.fillStyle='#0c1014';c.beginPath();c.arc(wheelX,y,R,0,7);c.fill();c.fillStyle='#8d99a4';c.beginPath();c.arc(wheelX,y,R*.55,0,7);c.fill();
+  c.strokeStyle='#0c1014';c.lineWidth=2;for(let i=0;i<3;i++){const a=phW+i*2.094;c.beginPath();c.moveTo(wheelX,y);c.lineTo(wheelX+Math.cos(a)*R*.55,y+Math.sin(a)*R*.55);c.stroke()}
+}
+function driveLabel(){
+  if(s.crank>0)return'Đang đề máy...';
+  if(!s.engine){return s.gear==='N'||s.clutch>.72?'Máy tắt. Đạp côn rồi nổ máy.':'Máy tắt, xe đang gài số nên bánh bị máy giữ lại.'}
+  const e=clutchEngage(s.clutch);
+  if(s.gear==='N')return'Số N: hộp số không nối với bánh. Ga chỉ làm máy gào, xe không đi.';
+  if(e<.01)return'Côn đạp hết: máy tách khỏi hộp số, bánh xe lăn tự do.';
+  if(e<.97)return'Nửa côn: hai đĩa trượt lên nhau, máy truyền một phần lực xuống bánh.';
+  return'Côn nhả hết: máy, hộp số và bánh quay cùng nhau.';
+}
+
+/* ---------- Góc nhìn trong khoang lái ---------- */
+/* Tọa độ trong xe: x về phía trước tính từ cầu sau, y sang phải, z lên trên. Người lái ngồi bên trái. */
+const EYE={x:1.2,y:-.37,z:1.16},BASE_PITCH=-.035,NEAR=.08;
+const look={yaw:0,drag:0,back:false,pitch:0,lastV:0,lastT:0};
+function mkCam(x,y,z,yaw,pitch,F,cx,cy){return{x,y,z,yaw,pitch,ca:Math.cos(yaw),sa:Math.sin(yaw),cp:Math.cos(pitch),sp:Math.sin(pitch),F,cx,cy}}
+function camPt(k,p){const dx=p[0]-k.x,dy=p[1]-k.y,dz=p[2]-k.z,fw=dx*k.ca+dy*k.sa,r=-dx*k.sa+dy*k.ca;return[r,-fw*k.sp+dz*k.cp,fw*k.cp+dz*k.sp]}
+function polyPath(c,k,pts){
+  let prev=camPt(k,pts[pts.length-1]),first=true;
+  const emit=(r,u,f)=>{const x=k.cx+k.F*r/f,y=k.cy-k.F*u/f;if(first){c.moveTo(x,y);first=false}else c.lineTo(x,y)};
+  for(const p of pts){
+    const cur=camPt(k,p);
+    if((prev[2]>NEAR)!==(cur[2]>NEAR)){const t=(NEAR-prev[2])/(cur[2]-prev[2]);emit(prev[0]+(cur[0]-prev[0])*t,prev[1]+(cur[1]-prev[1])*t,NEAR)}
+    if(cur[2]>NEAR)emit(cur[0],cur[1],cur[2]);
+    prev=cur;
+  }
+  if(!first)c.closePath();
+}
+function fillPoly(c,k,pts,col){c.beginPath();polyPath(c,k,pts);c.fillStyle=col;c.fill()}
+const gRect=(x0,y0,x1,y1)=>[[x0,y0,0],[x1,y0,0],[x1,y1,0],[x0,y1,0]];
+function gLine(x1,y1,x2,y2,w){const dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy)||1,nx=-dy/l*w/2,ny=dx/l*w/2;return[[x1+nx,y1+ny,0],[x2+nx,y2+ny,0],[x2-nx,y2-ny,0],[x1-nx,y1-ny,0]]}
+function segRect([a,b,c,d],w){return gRect(Math.min(a,c)-w/2,Math.min(b,d)-w/2,Math.max(a,c)+w/2,Math.max(b,d)+w/2)}
+function ground3D(){
+  const dash=[];for(const[a,b,c,d]of DASHES){const l=Math.hypot(c-a,d-b),n=Math.floor(l/4);for(let i=0;i<n;i++){const t0=i*4/l,t1=(i*4+2)/l;dash.push(gLine(a+(c-a)*t0,b+(d-b)*t0,a+(c-a)*t1,b+(d-b)*t1,.16))}}
+  const chev=[];for(const[a,b,dir]of[[HILL.up[0],HILL.up[1],-1],[HILL.down[0],HILL.down[1],1]])for(let x=a+1;x<b;x+=3){chev.push(gLine(x-dir,-63.4,x+dir*.5,-60,.3),gLine(x+dir*.5,-60,x-dir,-56.6,.3))}
+  const stops=[gLine(-8,0,-8,4,.45),gLine(8,0,8,-4,.45),gLine(0,-8,-4,-8,.45),gLine(0,8,4,8,.45),gLine(52,-64,52,-60,.45)];
+  const bay=[gLine(BAY.x0,BAY.y0,BAY.x0,BAY.y1,.14),gLine(BAY.x0,BAY.y1,BAY.x1,BAY.y1,.14),gLine(BAY.x1,BAY.y1,BAY.x1,BAY.y0,.14)];
+  return[
+    ['#eceee8',ROADS.map(r=>segRect(r,RW+.3))],
+    ['#3b4045',ROADS.map(r=>segRect(r,RW))],
+    ['#00000033',[gRect(HILL.up[0],-64,HILL.up[1],-56)]],
+    ['#ffffff14',[gRect(HILL.down[0],-64,HILL.down[1],-56)]],
+    ['#ffb53d88',chev],
+    ['#f0c23c',dash],
+    ['#f4f5f0',stops.concat(bay)],
+    ['#ffffff12',[gRect(BAY.x0,BAY.y0,BAY.x1,BAY.y1)]],
+  ].map(([col,polys])=>[col,polys.map(p=>{const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return{p,x:(x0+x1)/2,y:(y0+y1)/2,r:Math.hypot(x1-x0,y1-y0)/2}})]);
+}
+const YARD_G3=ground3D();let G3=YARD_G3;
+function billboardTree(c,k,a,b,r){
+  const q=camPt(k,[a,b,0]);if(q[2]<.5)return;
+  const sc=k.F/q[2],x=k.cx+q[0]*sc,y=k.cy-q[1]*sc;
+  const yAt=z=>k.cy-(q[1]+z)*sc;
+  c.fillStyle='#4a3a2a';c.fillRect(x-.16*sc,yAt(2.4),.32*sc,y-yAt(2.4));
+  const cz=2+r*.85;
+  c.fillStyle='#3c6030';c.beginPath();c.arc(x,yAt(cz),r*sc,0,7);c.fill();
+  c.fillStyle='#4c7a3a';c.beginPath();c.arc(x-r*.22*sc,yAt(cz+r*.18),r*.68*sc,0,7);c.fill();
+  c.fillStyle='#5d9046';c.beginPath();c.arc(x-r*.36*sc,yAt(cz+r*.36),r*.34*sc,0,7);c.fill();
+}
+function billboardCone(c,k,o){
+  const q=camPt(k,[o.x,o.y,0]);if(q[2]<.25)return;
+  const sc=k.F/q[2],x=k.cx+q[0]*sc,y=k.cy-q[1]*sc,h=.72*sc,b=.2*sc;
+  c.fillStyle=o.hit?'#8d4a24':'#ff7a1a';c.beginPath();c.moveTo(x-b,y);c.lineTo(x+b,y);c.lineTo(x+b*.12,y-h);c.lineTo(x-b*.12,y-h);c.closePath();c.fill();
+  c.fillStyle='#fff';c.beginPath();c.moveTo(x-b*.62,y-h*.38);c.lineTo(x+b*.62,y-h*.38);c.lineTo(x+b*.42,y-h*.62);c.lineTo(x-b*.42,y-h*.62);c.closePath();c.fill();
+}
+function drawBuilding(c,k,[a,b,w,h]){
+  const H=5,face=(p,q,col)=>fillPoly(c,k,[[p[0],p[1],0],[q[0],q[1],0],[q[0],q[1],H],[p[0],p[1],H]],col);
+  if(k.x<a)face([a,b],[a,b+h],'#a98f78');
+  if(k.x>a+w)face([a+w,b],[a+w,b+h],'#a98f78');
+  if(k.y>b+h)face([a,b+h],[a+w,b+h],'#b39a83');
+  if(k.y<b){
+    face([a,b],[a+w,b],'#c4ab92');
+    for(let x=a+2;x<a+w-2;x+=5)fillPoly(c,k,[[x,b,1.2],[x+3,b,1.2],[x+3,b,3.2],[x,b,3.2]],'#3d5364');
+    const q=camPt(k,[a+w/2,b,4.2]);
+    if(q[2]>1){const sc=k.F/q[2];c.fillStyle='#7a2f1e';c.font=`700 ${Math.max(6,.95*sc)}px "Chakra Petch","Segoe UI",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText('TRƯỜNG LÁI',k.cx+q[0]*sc,k.cy-q[1]*sc)}
+  }
+}
+function billboardMarker(c,k,x,y,t){
+  const q=camPt(k,[x,y,3.2+Math.sin(t/300)*.3]);if(q[2]<1)return;
+  const sc=k.F/q[2],sx=k.cx+q[0]*sc,sy=k.cy-q[1]*sc,b=.55*sc;
+  c.fillStyle='#ffb53d';c.strokeStyle='#241700';c.lineWidth=1;c.beginPath();c.moveTo(sx-b,sy-b);c.lineTo(sx+b,sy-b);c.lineTo(sx,sy+b*.6);c.closePath();c.fill();c.stroke();
+}
+function signPost(c,k,x,y,txt){
+  const q=camPt(k,[x,y,0]);if(q[2]<1)return;
+  const sc=k.F/q[2],sx=k.cx+q[0]*sc,sy=k.cy-q[1]*sc,top=sy-2.5*sc,b=.65*sc;
+  c.fillStyle='#8d99a4';c.fillRect(sx-.05*sc,top,.1*sc,sy-top);
+  c.fillStyle='#ffd23c';c.strokeStyle='#c8201a';c.lineWidth=Math.max(1,.12*sc);c.beginPath();c.moveTo(sx,top-b*1.2);c.lineTo(sx+b,top+b*.4);c.lineTo(sx-b,top+b*.4);c.closePath();c.fill();c.stroke();
+  c.fillStyle='#111';c.font=`700 ${Math.max(5,.36*sc)}px "Chakra Petch",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(txt,sx,top);
+}
+const GRASS_TONES=[null,'#557140','#638249'];
+/* Cắt vết thành các nét đứt có kích thước thật trên mặt đất, để gần to xa nhỏ như vạch sơn. Đếm từ đầu xa để nét không nhảy khi vô lăng đổi chiều. */
+function pathDashes(P){
+  const ON=1,OFF=.8,W=.16,EPS=1e-9,out=[];let on=true,left=ON;
+  for(let i=P.length-1;i>0;i--){
+    const a=P[i],b=P[i-1],l=Math.hypot(b[0]-a[0],b[1]-a[1]);let t=0;
+    while(l-t>EPS){
+      const st=Math.min(left,l-t);
+      if(on){const t0=t/l,t1=(t+st)/l;out.push(gLine(a[0]+(b[0]-a[0])*t0,a[1]+(b[1]-a[1])*t0,a[0]+(b[0]-a[0])*t1,a[1]+(b[1]-a[1])*t1,W))}
+      t+=st;left-=st;
+      if(left<=EPS){on=!on;left=on?ON:OFF}
+    }
+  }
+  return out;
+}
+function scene3D(c,k,W,H,far,t,full){
+  const hy=k.cy+k.F*k.sp/k.cp;
+  const sky=c.createLinearGradient(0,0,0,Math.max(1,hy));sky.addColorStop(0,'#7fb2dc');sky.addColorStop(1,'#d9e8ee');
+  c.fillStyle=sky;c.fillRect(0,0,W,Math.max(0,hy));
+  c.fillStyle='#47603a';c.fillRect(0,hy,W,H-hy);
+  c.fillStyle='#7d9a8c';c.beginPath();c.moveTo(0,hy);
+  for(let x=0;x<=W+12;x+=12){const a=k.yaw+Math.atan((x-k.cx)/k.F);c.lineTo(x,hy-k.F*(.018+.009*Math.sin(a*3)+.006*Math.sin(a*7+1)+.004*Math.sin(a*13+2)))}
+  c.lineTo(W,hy);c.closePath();c.fill();
+  fillPoly(c,k,gRect(-WALL.x,-WALL.y,WALL.x,WALL.y),'#5c7a44');
+  // Mảng cỏ để cảm nhận tốc độ
+  const T=7,rg=full?Math.min(far,70):0,ix0=Math.floor((k.x-rg)/T),ix1=Math.floor((k.x+rg)/T),iy0=Math.floor((k.y-rg)/T),iy1=Math.floor((k.y+rg)/T);
+  if(full)for(const tone of[1,2]){
+    c.beginPath();
+    for(let i=ix0;i<=ix1;i++)for(let j=iy0;j<=iy1;j++){
+      if((((i*73856093)^(j*19349663))>>>0)%3!==tone)continue;
+      const x=i*T,y=j*T;if(x<-WALL.x||y<-WALL.y||x+T>WALL.x||y+T>WALL.y)continue;
+      if((x+T/2-k.x)*k.ca+(y+T/2-k.y)*k.sa<-T)continue;
+      polyPath(c,k,gRect(x,y,x+T,y+T));
+    }
+    c.fillStyle=GRASS_TONES[tone];c.fill();
+  }
+  for(const[col,polys]of G3){
+    c.beginPath();
+    for(const o of polys)if(Math.hypot(o.x-k.x,o.y-k.y)-o.r<far)polyPath(c,k,o.p);
+    c.fillStyle=col;c.fill();
+  }
+  const pulse=.5+.5*Math.sin(t/300),z=lesson&&!finished&&lesson.zone;
+  if(z)fillPoly(c,k,gRect(z.x-z.w/2,z.y-z.h/2,z.x+z.w/2,z.y+z.h/2),`rgba(255,181,61,${.22+pulse*.25})`);
+  const bayOn=lesson&&lesson.bay&&!finished;
+  if(bayOn)fillPoly(c,k,gRect(BAY.x0,BAY.y0,BAY.x1,BAY.y1),`rgba(255,181,61,${.14+pulse*.18})`);
+  // Vạch dự đoán
+  if(full&&opt.path&&(s.engine||s.v!==0)){
+    const{L,R,rev}=pathPoints(),col=rev?'#ff9d2e':'#8df0a2';
+    c.beginPath();for(const P of[L,R])for(const q of pathDashes(P))polyPath(c,k,q);
+    c.fillStyle=col;c.fill();
+    /* Viền mảnh để đoạn vạch nằm ngang ở xa không bị mất nét */
+    c.strokeStyle=col;c.lineWidth=1;c.stroke();
+  }
+  // Tường rào
+  const fz=1.8;for(const[a,b,e,f]of[[-WALL.x,-WALL.y,WALL.x,-WALL.y],[WALL.x,-WALL.y,WALL.x,WALL.y],[WALL.x,WALL.y,-WALL.x,WALL.y],[-WALL.x,WALL.y,-WALL.x,-WALL.y]])fillPoly(c,k,[[a,b,0],[e,f,0],[e,f,fz],[a,b,fz]],'#b6bcc0');
+  // Vật thể: vẽ xa trước, gần sau
+  const objs=[];
+  const dist=(x,y)=>Math.hypot(x-k.x,y-k.y);
+  for(const tr of TREES){const d=dist(tr[0],tr[1]);if(d<far+20)objs.push([d,()=>billboardTree(c,k,tr[0],tr[1],tr[2])])}
+  for(const o of cones){const d=dist(o.x,o.y);if(d<far)objs.push([d,()=>billboardCone(c,k,o)])}
+  for(const b of BLDS){const d=dist(b[0]+b[2]/2,b[1]+b[3]/2);if(d<far+30)objs.push([d,()=>drawBuilding(c,k,b)])}
+  if(full){
+    if(curMap==='yard')objs.push([dist(73,-65.5),()=>signPost(c,k,73,-65.5,'10%')]);
+    else{
+      for(const[x,y,tx]of EX_SIGNS)objs.push([dist(x,y),()=>signPost(c,k,x,y,tx)]);
+      objs.push([dist(LIGHT_POS[0],LIGHT_POS[1]),()=>trafficLight3D(c,k)]);
+    }
+    if(z)objs.push([dist(z.x,z.y),()=>billboardMarker(c,k,z.x,z.y,t)]);
+    if(bayOn)objs.push([dist(-50,7),()=>billboardMarker(c,k,-50,7,t)]);
+  }
+  objs.sort((a,b)=>b[0]-a[0]);for(const o of objs)o[1]();
+}
+/* Nội thất: các mặt phẳng trong hệ tọa độ xe, sắp sẵn từ xa đến gần so với mắt người lái */
+const CABIN=(()=>{
+  const q=(col,...p)=>({col,p});const L=[];
+  const both=(f)=>{f(1);f(-1)};
+  /* Capô: gần bằng chiều rộng thân xe, chỉ thu nhẹ ở mũi xe */
+  L.push(q('#eef0ee',[2.15,-.86,.93],[2.15,.86,.93],[3.35,.8,.8],[3.35,-.8,.8]));
+  L.push(q('#d9dcda',[2.15,-.1,.935],[2.15,.1,.935],[3.35,.08,.805],[3.35,-.08,.805]));
+  L.push(q('#eef0ee',[-.8,-.8,.8],[-.8,.8,.8],[-.55,.8,.84],[-.55,-.8,.84]));
+  L.push(q('#20262c',[-.55,-.86,.84],[-.55,.86,.84],[-.05,.86,.8],[-.05,-.86,.8]));
+  L.push(q('#3a3f45',[-.05,-.86,.25],[-.05,.86,.25],[-.05,.86,.8],[-.05,-.86,.8]));
+  for(const y of[-.5,.5])L.push(q('#454b52',[-.03,y-.09,.83],[-.03,y+.09,.83],[-.03,y+.09,.96],[-.03,y-.09,.96]));
+  L.push(q('#15191d',[-.55,-.86,.3],[-.55,.86,.3],[1.8,.86,.3],[1.8,-.86,.3]));
+  L.push(q('#c4c8cb',[-.32,-.72,1.4],[-.32,.72,1.4],[1.62,.72,1.4],[1.62,-.72,1.4]));
+  both(sg=>{
+    L.push(q('#2f363d',[-.55,sg*.86,.25],[2.12,sg*.86,.25],[2.12,sg*.86,.94],[-.55,sg*.86,.86]));
+    L.push(q('#2a3138',[2.14,sg*.84,.93],[2.0,sg*.84,.93],[1.5,sg*.71,1.39],[1.64,sg*.71,1.39]));
+    L.push(q('#3a424a',[.66,sg*.82,.93],[.82,sg*.82,.93],[.82,sg*.72,1.38],[.66,sg*.72,1.38]));
+    L.push(q('#3a424a',[-.55,sg*.84,.86],[-.42,sg*.84,.86],[-.2,sg*.72,1.38],[-.32,sg*.72,1.38]));
+  });
+  L.push(q('#1d2329',[1.72,-.88,.89],[1.72,.88,.89],[2.15,.85,.94],[2.15,-.85,.94]));
+  L.push(q('#252c33',[1.72,-.88,.45],[1.72,.88,.45],[1.72,.88,.89],[1.72,-.88,.89]));
+  const dE=o=>{const n=o.p.length;let x=0,y=0,z=0;for(const a of o.p){x+=a[0];y+=a[1];z+=a[2]}return Math.hypot(x/n-EYE.x,y/n-EYE.y,z/n-EYE.z)};
+  return L.map(o=>[dE(o),o]).sort((a,b)=>b[0]-a[0]).map(a=>a[1]);
+})();
+function drawCabinWheel(c,k){
+  const C=[1.74,-.37,.86],e1=[0,1,0],e2=[.34,0,.94],R=.185,rot=s.steer*3*Math.PI;
+  const pt=(phi,r)=>{const a=phi+rot,u=Math.sin(a)*r,v=Math.cos(a)*r;return camPt(k,[C[0]+u*e1[0]+v*e2[0],C[1]+u*e1[1]+v*e2[1],C[2]+u*e1[2]+v*e2[2]])};
+  const scr=q=>[k.cx+k.F*q[0]/q[2],k.cy-k.F*q[1]/q[2]];
+  if(camPt(k,C)[2]<.2)return;
+  const lw=k.F*.045;c.lineCap='round';
+  c.strokeStyle='#14181c';c.lineWidth=lw*.7;
+  for(const ph of[Math.PI/2,-Math.PI/2,Math.PI]){const a=scr(pt(ph,.03)),b=scr(pt(ph,R));c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke()}
+  c.strokeStyle='#0d1014';c.lineWidth=lw;c.beginPath();
+  for(let i=0;i<=44;i++){const q=pt(i/44*2*Math.PI,R),[x,y]=scr(q);i?c.lineTo(x,y):c.moveTo(x,y)}
+  c.stroke();
+  const[hx,hy]=scr(pt(0,0));c.fillStyle='#232a31';c.beginPath();c.arc(hx,hy,k.F*.12,0,7);c.fill();
+  c.strokeStyle='#ffb53d';c.lineWidth=lw*.8;c.lineCap='butt';const m0=scr(pt(-.07,R)),m1=scr(pt(.07,R));c.beginPath();c.moveTo(m0[0],m0[1]);c.lineTo(m1[0],m1[1]);c.stroke();
+}
+const MIR={};
+function mirrorCanvas(name,w,h){let m=MIR[name];if(!m){m=MIR[name]=document.createElement('canvas')}if(m.width!==w||m.height!==h){m.width=w;m.height=h;m._dirty=true}return m}
+/* Mỗi khung chỉ vẽ lại một gương, luân phiên, để giảm tải cho máy yếu */
+let mirTick=0;
+function drawMirror(c,name,x,y,w,h,camX,camY,yaw,t,side,turn){
+  const px=1.5,cw=Math.round(w*px),ch=Math.round(h*px),m=mirrorCanvas(name,cw,ch);
+  if(m._dirty||turn===mirTick){
+    const mc=m.getContext('2d');mc.setTransform(1,0,0,1,0,0);
+    scene3D(mc,mkCam(camX,camY,EYE.z,yaw,0,cw*.9,cw/2,ch*.5),cw,ch,70,t,false);
+    m._dirty=false;
+  }
+  c.save();
+  c.beginPath();c.roundRect(x,y,w,h,side?9:7);c.fillStyle='#0d1014';c.fill();
+  c.beginPath();c.roundRect(x+3,y+3,w-6,h-6,side?7:5);c.clip();
+  c.translate(x+w,y);c.scale(-1,1);c.drawImage(m,0,0,w,h);
+  c.restore();
+  if(side){ /* Một dải thân xe ở mép trong gương */
+    c.save();c.beginPath();c.roundRect(x+3,y+3,w-6,h-6,7);c.clip();
+    const bw=w*.17;c.fillStyle='#e6e9e7';c.fillRect(side<0?x+w-3-bw:x+3,y,bw,h);c.restore();
+  }
+  c.strokeStyle='#ffffff30';c.lineWidth=1;c.beginPath();c.roundRect(x+3,y+3,w-6,h-6,side?7:5);c.stroke();
+}
+function drawCabin(t){
+  const cv=$('world'),{w,h,d}=fit(cv),c=wctx;
+  c.setTransform(d,0,0,d,0,0);
+  updateCam(w,h);
+  const dtm=Math.max(.001,(t-look.lastT)/1000);look.lastT=t;
+  const acc=(s.v-look.lastV)/dtm;look.lastV=s.v;
+  const sl=slopeX(s.x+Math.cos(s.h)*1.3,s.y+Math.sin(s.h)*1.3);
+  const pitchT=Math.atan(sl*Math.cos(s.h))+clamp(acc*.005,-.03,.03);
+  look.pitch+=(pitchT-look.pitch)*.06;
+  const yawT=look.back?Math.PI:look.drag+clamp(s.steer,-1,1)*.16;
+  look.yaw+=(yawT-look.yaw)*.14;
+  /* Góc nhìn ngang khoảng 77 độ, gần tầm mắt người lái hơn ống kính góc rộng */
+  const F=Math.max(w*.62,h*.6),cx=w/2,cy=h*(w/h<1.2?.5:.4);
+  const b=(1-Math.cos(look.yaw))/2,eyeX=EYE.x-.5*b,eyeY=EYE.y+.37*b,eyeZ=EYE.z+.08*b;
+  const co=Math.cos(s.h),si=Math.sin(s.h);
+  const ex=s.x+co*eyeX-si*eyeY,ey=s.y+si*eyeX+co*eyeY;
+  const pw=BASE_PITCH-.13*b+look.pitch*Math.cos(look.yaw);
+  scene3D(c,mkCam(ex,ey,eyeZ,s.h+look.yaw,pw,F,cx,cy),w,h,240,t,true);
+  // Nội thất đi theo đầu người lái
+  const ki=mkCam(eyeX,eyeY,eyeZ,look.yaw,BASE_PITCH-.13*b,F,cx,cy);
+  for(const o of CABIN)fillPoly(c,ki,o.p,o.col);
+  drawCabinWheel(c,ki);
+  if(s.blink&&Math.floor(t/380)%2===0){
+    const ax=cx+(s.blink>0?70:-70),ay=h-26,dir=s.blink;
+    if(Math.abs(look.yaw)<.8){c.fillStyle='#5dcb73';c.beginPath();c.moveTo(ax+dir*16,ay);c.lineTo(ax,ay-11);c.lineTo(ax,ay+11);c.closePath();c.fill()}
+  }
+  if(s.hazard&&Math.floor(t/380)%2===0&&Math.abs(look.yaw)<.8){c.fillStyle='#f0604f';c.beginPath();c.moveTo(cx,h-40);c.lineTo(cx+15,h-14);c.lineTo(cx-15,h-14);c.closePath();c.fill()}
+  // Gương: ảnh phía sau được lật như gương thật
+  if(Math.abs(look.yaw)<.9){
+    const lessonEl=$('lesson');
+    const topY=w<720?lessonEl.offsetTop+lessonEl.offsetHeight+8:12;
+    const rw=Math.min(w*.26,330),rh=Math.max(38,rw*.25);
+    mirTick=(mirTick+1)%3;
+    drawMirror(c,'rear',w<720?w-rw-10:(w-rw)/2,topY,rw,rh,ex,ey,s.h+Math.PI,t,0,0);
+    const sw=Math.min(w*.16,172),sh=sw*.62;
+    const lb=w>=720?$('lesson').offsetTop+$('lesson').offsetHeight+8:0;
+    const sy=Math.min(Math.max(topY+rh+6,h*.46,lb),h-sh-8);
+    const mx=(sg)=>[s.x+co*2-si*sg*1,s.y+si*2+co*sg*1];
+    const[lx,ly]=mx(-1),[rx,ry]=mx(1);
+    drawMirror(c,'left',10,sy,sw,sh,lx,ly,s.h+Math.PI+.2,t,-1,1);
+    drawMirror(c,'right',w-sw-10,sy,sw,sh,rx,ry,s.h+Math.PI-.2,t,1,2);
+  }
+}
+
+/* ---------- Thi sa hình hạng B ---------- */
+/* Điểm trừ theo Thông tư 05/2024/TT-BGTVT (18 phút, 100 điểm, đạt từ 80). Danh mục bài có đối chiếu Thông tư 12/2025/TT-BCA.
+   Kích thước sân là mô phỏng gần đúng, không phải số đo của trung tâm sát hạch. */
+const EXAM_NOTE='Điểm trừ theo Thông tư 05/2024/TT-BGTVT, danh mục bài đối chiếu Thông tư 12/2025/TT-BCA. Kích thước sân là mô phỏng gần đúng. Đây là công cụ ôn tập, không thay thế quy định và sân thi thật.';
+const SPEED_MAX=24,RPM_MAX=4000,TOTAL_LIMIT=18*60,HW=Math.PI,HS=Math.PI/2,HN=-Math.PI/2;
+const EX_DOC={x0:-1.4,x1:1.4,y0:60.4,y1:66},EX_NGANG={x0:-49,x1:-40.5,y0:63.2,y1:66};
+const LIGHT_POS=[108.5,-64.5],STOP_LIGHT=106;
+const sCurvePts=(()=>{const p=[];for(let y=-42;y<=30;y+=3)p.push([120+5*Math.sin(2*Math.PI*(y+42)/36),y]);return p})();
+const STRIPS=[
+  {w:6,p:[[-118,-70],[-20,-70]]},
+  {w:6.2,p:[[-20,-70],[-14,-70],[-14,-48],[14,-48],[14,-70],[20,-70]]},
+  {w:6,p:[[20,-70],[113,-70]]},
+  {w:8,p:[[100,-70],[150,-70]]},
+  {w:8,p:[[120,-96],[120,-50]]},
+  {w:6,p:[[120,-50],[120,-42]]},
+  {w:4.8,p:sCurvePts},
+  {w:6,p:[[120,30],[120,70]]},
+  {w:6,p:[[120,70],[30,70]]},
+  {w:8,p:[[30,70],[-75,70]]},
+  {w:6,p:[[-75,70],[-120,70]]},
+  {w:6,p:[[-120,70],[-120,-58]]},
+  /* Vát góc chuyển giữa các bài cho dễ đi, không thuộc phần chấm vạch */
+  {w:6,p:[[120,56],[106,70]]},
+  {w:6,p:[[-106,70],[-120,56]]},
+];
+const STRIP_SEGS=[];for(const st of STRIPS)for(let i=1;i<st.p.length;i++)STRIP_SEGS.push({seg:[st.p[i-1][0],st.p[i-1][1],st.p[i][0],st.p[i][1]],w:st.w});
+/* Khoảng cách từ một điểm ra ngoài mép đường, nhỏ hơn hoặc bằng 0 là còn trong đường */
+function examOutside(x,y){
+  let best=99;
+  for(const o of STRIP_SEGS){const d=segDist(x,y,o.seg)-o.w/2;if(d<best)best=d}
+  for(const b of[EX_DOC,EX_NGANG]){const dx=Math.max(b.x0-x,x-b.x1),dy=Math.max(b.y0-y,y-b.y1),d=Math.max(dx,dy);if(d<best)best=d}
+  return best;
+}
+function examMarks(){
+  const L=[],line=(a,b,c,d,w)=>L.push(gLine(a,b,c,d,w));
+  const white=[];const W=(a,b,c,d,w=.45)=>white.push(gLine(a,b,c,d,w));
+  W(-105,-73,-105,-67);W(-70,-73,-70,-67);W(STOP_LIGHT,-74,STOP_LIGHT,-66);W(72,67,72,73);W(-123,46,-117,46);W(-123,-48,-117,-48,.8);
+  for(const y of[25,0,-25])W(-123,y,-117,y,.25);
+  for(let i=0;i<6;i++)W(-69+.7,-72.7+i,-64.8,-72.7+i,.5);
+  const rail=[];for(const y of[39.3,40.7])rail.push(gLine(-124,y,-116,y,.14));
+  const ties=[];for(let x=-123.5;x<=-116.5;x+=.9)ties.push(gLine(x,38.6,x,41.4,.25));
+  const chev=[];for(const[a,b,dir]of[[HILL_EXAM.up[0],HILL_EXAM.up[1],-1],[HILL_EXAM.down[0],HILL_EXAM.down[1],1]])for(let x=a+1;x<b;x+=3)chev.push(gLine(x-dir,67.4,x+dir*.5,70,.28),gLine(x+dir*.5,70,x-dir,72.6,.28));
+  const bayOut=[];for(const b of[EX_DOC,EX_NGANG]){bayOut.push(gLine(b.x0,b.y1,b.x0,b.y0,.14),gLine(b.x0,b.y0,b.x1,b.y0,.14),gLine(b.x1,b.y0,b.x1,b.y1,.14))}
+  return[
+    ['#00000033',[gRect(HILL_EXAM.up[0],67,HILL_EXAM.up[1],73)]],
+    ['#ffffff14',[gRect(HILL_EXAM.down[0],67,HILL_EXAM.down[1],73)]],
+    ['#ffb53d88',chev],
+    ['#6b5a44',ties],['#c9ced1',rail],
+    ['#cdb88a',[gRect(-38,-69.7,-26,-68.7)]],
+    ['#3b4045',[gRect(EX_DOC.x0,EX_DOC.y0,EX_DOC.x1,EX_DOC.y1+.25),gRect(EX_NGANG.x0,EX_NGANG.y0,EX_NGANG.x1,EX_NGANG.y1+.25)]],
+    ['#f4f5f0',white.concat(bayOut)],
+  ];
+}
+const HILL_EXAM={yMin:64,yMax:76,up:[64,88],down:[30,50],grade:.1};
+let EX_MARKS=null,EX_G3=null;
+function polysWithBox(polys){return polys.map(p=>{const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return{p,x:(x0+x1)/2,y:(y0+y1)/2,r:Math.hypot(x1-x0,y1-y0)/2}})}
+function buildExamG3(){
+  EX_MARKS=examMarks();
+  const strip=extra=>{const out=[];for(const o of STRIP_SEGS){const[a,b,c,d]=o.seg,l=Math.hypot(c-a,d-b)||1,e=(o.w/2)*.8,ux=(c-a)/l,uy=(d-b)/l;out.push(gLine(a-ux*e,b-uy*e,c+ux*e,d+uy*e,o.w+extra))}return out};
+  EX_G3=[['#eceee8',strip(.3)],['#3b4045',strip(0)],...EX_MARKS].map(([c,p])=>[c,polysWithBox(p)]);
+}
+const EX_SIGNS=[[-72,-74.5,'2'],[-40,-74,'3'],[100,-75.5,'4'],[126,-44,'5'],[92,76.5,'6'],[20,76,'7'],[-24,76,'8'],[-125.5,58,'9'],[-125.5,27,'10'],[-125.5,-40,'11']];
+const EX_LABELS=[[-105,-75.5,'XUẤT PHÁT'],[-68,-75.5,'NGƯỜI ĐI BỘ'],[-32,-75,'VỆT BÁNH XE'],[0,-41,'VÒNG VUÔNG GÓC'],[96,-76,'NGÃ TƯ'],[131,-6,'QUANH CO'],[72,78,'DỐC 10%'],[0,57.5,'GHÉP DỌC'],[-44,60.5,'GHÉP NGANG'],[-110,40,'ĐƯỜNG SẮT'],[-109,0,'THAY ĐỔI SỐ'],[-110,-48,'KẾT THÚC']];
+function lightColor(){return exam&&exam.light==='red'?'#ff3b2f':'#35d35f'}
+function trafficLight3D(c,k){
+  const q=camPt(k,[LIGHT_POS[0],LIGHT_POS[1],0]);if(q[2]<1)return;
+  const sc=k.F/q[2],x=k.cx+q[0]*sc,y=k.cy-q[1]*sc,top=y-3.2*sc;
+  c.fillStyle='#39424a';c.fillRect(x-.06*sc,top,.12*sc,y-top);
+  c.fillStyle='#14181c';c.fillRect(x-.22*sc,top-.75*sc,.44*sc,1.05*sc);
+  c.fillStyle=lightColor();c.beginPath();c.arc(x,top-.22*sc,.17*sc,0,7);c.fill();
+}
+function drawExamGround(c){
+  c.fillStyle=PAT.grass;c.fillRect(-WALL.x,-WALL.y,WALL.x*2,WALL.y*2);
+  c.lineJoin='round';c.lineCap='butt';
+  const draw=(col,ex)=>{c.strokeStyle=col;for(const st of STRIPS){c.lineWidth=st.w+ex;c.beginPath();st.p.forEach(([a,b],i)=>i?c.lineTo(a,b):c.moveTo(a,b));c.stroke()}};
+  draw('#eceee8',.3);draw(PAT.road,0);
+  for(const[col,polys]of EX_MARKS){c.fillStyle=col;c.beginPath();for(const p of polys){p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.closePath()}c.fill()}
+  for(const[x,y,t]of EX_LABELS)paintText(c,t,x,y,.95,'#ffffffd9');
+  c.fillStyle='#14181c';c.beginPath();c.arc(LIGHT_POS[0],LIGHT_POS[1],.7,0,7);c.fill();
+  c.fillStyle=lightColor();c.beginPath();c.arc(LIGHT_POS[0],LIGHT_POS[1],.5,0,7);c.fill();
+  drawScenery(c);
+}
+const EXAM_MAP={WALL:{x:165,y:105},
+  TREES:[[-60,-30,4],[-90,-25,3],[-70,30,3.6],[-30,25,3.4],[50,32,3.5],[90,30,3.4],[80,-42,3.2],[88,-18,3],[-145,-85,4],[150,90,4],[-150,85,3.6],[150,-95,3.6],[70,92,3.5],[-30,92,3.5],[0,-92,3.8],[-95,-90,3]],
+  BLDS:[[30,-25,36,18]],hill:HILL_EXAM};
+function useMap(m){
+  if(m===curMap&&(m!=='exam'||EX_G3))return;
+  curMap=m;
+  if(m==='exam'&&!EX_G3)buildExamG3();
+  const d=m==='exam'?EXAM_MAP:YARD;
+  WALL=d.WALL;TREES=d.TREES;BLDS=d.BLDS;Object.assign(HILL,d.hill);G3=m==='exam'?EX_G3:YARD_G3;
+}
+const frontPt=()=>[s.x+Math.cos(s.h)*CAR.front,s.y+Math.sin(s.h)*CAR.front];
+const frontIn=(x0,x1,y0,y1)=>()=>{const[f,g]=frontPt();return f>=x0&&f<=x1&&g>=y0&&g<=y1};
+function examWheels(){const c=Math.cos(s.h),n=Math.sin(s.h),w=CAR.wheelFace,o=[];for(const[a,b]of[[CAR.L,w],[CAR.L,-w],[0,w],[0,-w]])o.push([s.x+a*c-b*n,s.y+a*n+b*c]);return o}
+const bodyIn=b=>carCorners(s).every(([x,y])=>x>b.x0&&x<b.x1&&y>b.y0&&y<b.y1);
+const fmtM=d=>Math.abs(d).toFixed(2).replace('.',',')+' m';
+/* Dừng đúng vạch: d là khoảng cách từ cản trước tới vạch, dương là chưa tới vạch */
+function checkStop(st,dt,d,cb){
+  st.d=d;if(st.stopped)return;
+  if(Math.abs(s.v)<.03&&d<=3&&d>-8){st.still=(st.still||0)+dt;if(st.still>.35){st.stopped=true;cb(d)}}
+  else st.still=0;
+}
+function stopResult(d,name){
+  if(d<0)deduct(5,`${name}: dừng quá vạch ${fmtM(d)}`);
+  else if(d>.5)deduct(5,`${name}: dừng chưa tới vạch, còn cách ${fmtM(d)}`);
+  else say(`Dừng đúng: cách vạch ${fmtM(d)}`,'good');
+}
+const ST={
+ start:{no:1,name:'Xuất phát',pose:{x:-112,y:-70,h:0,engine:true,gear:'N',hb:true},enter:()=>true,exit:frontIn(-98,-60,-74,-66),
+  text:'Thắt dây an toàn, chờ lệnh. Có lệnh thì bật xi nhan trái và xuất phát trong 20 giây. Qua vạch 5 m thì tắt xi nhan.',keys:['belt','bl','clutch','hb'],hl:[],zone:{x:-103,y:-70,w:4,h:6},
+  tick(st,dt){
+    st.t=(st.t||0)+dt;
+    if(st.t<2.5)return;
+    if(!st.go){st.go=true;snd.done();say('Có lệnh xuất phát!','good');st.t0=st.t}
+    const el=st.t-st.t0,[fx]=frontPt();
+    if(!st.crossed&&fx>=-105){st.crossed=true;
+      if(!s.belt)deduct(5,'Xuất phát: không thắt dây an toàn');
+      if(s.blink!==-1)deduct(5,'Xuất phát: không bật xi nhan trái');
+    }
+    if(!st.crossed){
+      if(el>20&&!st.l20){st.l20=true;deduct(5,'Xuất phát: quá 20 giây chưa qua vạch')}
+      if(el>30)dq('Xuất phát: quá 30 giây chưa qua vạch');
+    }
+  },
+  done(){if(s.blink===-1)deduct(5,'Xuất phát: không tắt xi nhan trái sau vạch 5 m')}},
+ ped:{no:2,name:'Dừng xe nhường đường cho người đi bộ',pose:{x:-100,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-85,-60,-74,-66),exit:frontIn(-63,-40,-74,-66),
+  text:'Dừng sao cho cản trước cách vạch không quá 0,5 m, rồi đi tiếp.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-70.25,y:-70,w:.5,h:6},
+  tick(st,dt){checkStop(st,dt,-70-frontPt()[0],d=>stopResult(d,'Người đi bộ'))},
+  done(st){if(!st.stopped)deduct(5,'Người đi bộ: không dừng ở vạch')}},
+ vet:{no:3,name:'Qua vệt bánh xe và đường vòng vuông góc',pose:{x:-60,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-42,-20,-74,-66),exit:frontIn(22,60,-74,-66),lines:true,limit:120,
+  text:'Cho hai bánh bên phải đi trên dải vệt bánh, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:-32,y:-69.2,w:12,h:1},
+  tick(st){
+    const[fr,,rr]=examWheels();
+    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=-32){st[flag]=true;if(Math.abs(p[1]+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
+    chk(fr,'fOk','trước');chk(rr,'rOk','sau');
+  }},
+ light:{no:4,name:'Qua ngã tư có đèn tín hiệu (rẽ phải)',pose:{x:68,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(85,113,-74,-66),exit:frontIn(114,126,-58,-48),
+  text:'Đèn đỏ thì dừng trước vạch, không quá 0,5 m. Bật xi nhan phải, đèn xanh thì rẽ phải trong 20 giây.',keys:['br','brake','steer'],hl:['blinkR','brake'],zone:{x:105.75,y:-70,w:.5,h:8},
+  onEnter(st){exam.light='red';st.red=6+Math.random()*6;st.t=0},
+  tick(st,dt){
+    st.t+=dt;
+    if(exam.light==='red'&&st.t>=st.red){exam.light='green';st.g=0;snd.tick(990)}
+    if(exam.light==='green')st.g+=dt;
+    const[fx,fy]=frontPt(),d=STOP_LIGHT-fx;
+    if(exam.light==='red'){
+      checkStop(st,dt,d,x=>stopResult(x,'Ngã tư'));
+      if(fx>STOP_LIGHT+.5&&!st.ran&&!st.stopped){st.ran=true;deduct(10,'Ngã tư: vượt đèn đỏ')}
+    }
+    if(fx>=STOP_LIGHT&&s.blink===1)st.sig=true;
+    if(st.g>20&&!st.l20){st.l20=true;deduct(5,'Ngã tư: quá 20 giây từ khi đèn xanh chưa qua được')}
+    if(st.g>30)dq('Ngã tư: quá 30 giây từ khi đèn xanh chưa qua được');
+    if(fx>131||fy<-82)dq('Ngã tư: đi sai hướng của bài thi');
+  },
+  done(st){if(!st.sig)deduct(5,'Ngã tư: không bật xi nhan phải');exam.light='green'}},
+ curve:{no:5,name:'Qua đường vòng quanh co',pose:{x:120,y:-60,h:HS,engine:true,gear:'N',hb:false},enter:frontIn(110,130,-44,-30),exit:frontIn(110,130,31,60),lines:true,limit:120,
+  text:'Đi trong vùng giới hạn, không đè vạch, hoàn thành trong 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:120,y:33,w:6,h:3}},
+ hill:{no:6,name:'Dừng và khởi hành xe trên dốc',pose:{x:110,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(60,94,64,76),exit:frontIn(30,56,64,76),
+  text:'Dừng cách vạch không quá 0,5 m. Khởi hành trong 30 giây, không tụt quá 0,5 m. Dùng nửa côn, ga và phanh tay.',keys:['brake','hb','bite','gas'],hl:['brake','hb'],zone:{x:72.25,y:70,w:.5,h:6},
+  tick(st,dt){
+    const d=frontPt()[0]-72;
+    if(!st.stopped&&d<-1)dq('Dốc: không dừng ở vạch');
+    checkStop(st,dt,d,x=>{
+      if(x<0)dq(`Dốc: dừng quá vạch ${fmtM(x)}`);
+      else if(x>.5)deduct(5,`Dốc: dừng chưa tới vạch, còn cách ${fmtM(x)}`);
+      else say(`Dừng đúng: cách vạch ${fmtM(x)}`,'good');
+      st.x0=s.x;st.w=0;
+    });
+    if(st.stopped&&!exam.over){
+      if(s.x-st.x0>.5)dq('Dốc: xe tụt dốc quá 0,5 m');
+      if(!st.passed){st.w+=dt;if(d<-.05)st.passed=true;if(!st.passed&&st.w>30)dq('Dốc: quá 30 giây chưa khởi hành qua vạch')}
+    }
+  }},
+ doc:{no:7,name:'Ghép xe dọc vào nơi đỗ',pose:{x:26,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-20,20,64,76),exit:frontIn(-40,-16,62,76),lines:true,limit:120,
+  text:'Tiến qua nơi đỗ, lùi đuôi xe vào khung bên phải. Cả thân xe nằm trong vạch và dừng lại thì có tín hiệu, rồi tiến ra đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:0,y:63.2,w:2.8,h:5.6},
+  tick(st,dt){checkPark(st,dt,EX_DOC,()=>Math.sin(s.h)>.85)},done(st){if(!st.parked)dq('Ghép dọc: chưa ghép được xe vào nơi đỗ')}},
+ ngang:{no:8,name:'Ghép xe ngang vào nơi đỗ',pose:{x:-14,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-58,-22,62,76),exit:frontIn(-90,-58,64,76),lines:true,limit:120,
+  text:'Tiến qua nơi đỗ, lùi chếch vào khung bên phải rồi trả lái để xe nằm song song với lề. Dừng có tín hiệu rồi đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:-44.75,y:64.6,w:8.5,h:2.8},
+  tick(st,dt){checkPark(st,dt,EX_NGANG,()=>Math.cos(s.h)<-.9)},done(st){if(!st.parked)dq('Ghép ngang: chưa ghép được xe vào nơi đỗ')}},
+ rail:{no:9,name:'Tạm dừng ở chỗ có đường sắt chạy qua',pose:{x:-120,y:62,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-126,-114,48,56),exit:frontIn(-126,-114,28,36),
+  text:'Dừng cách vạch không quá 0,5 m, rồi đi qua đường sắt.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-120,y:46.25,w:6,h:.5},
+  tick(st,dt){checkStop(st,dt,frontPt()[1]-46,d=>stopResult(d,'Đường sắt'))},
+  done(st){if(!st.stopped)deduct(5,'Đường sắt: không dừng ở vạch')}},
+ gear:{no:10,name:'Thay đổi số trên đường bằng',pose:{x:-120,y:34,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-126,-114,-25,25),exit:frontIn(-126,-114,-48,-25),noSpeed:true,limit:120,
+  text:'Vào bài ở số 1. Trong 25 m đầu lên số 2 và vượt 24 km/h. Trong 25 m sau về số 1 và xuống từ 24 km/h trở xuống.',keys:['clutch','gas','brake'],hl:['shifter','clutch'],zone:{x:-120,y:12.5,w:6,h:25},
+  onEnter(st){st.g1=s.gear==='1';if(!st.g1)say('Vào bài này phải đang ở số 1.','warn')},
+  tick(st){
+    if(!st.mid&&frontPt()[1]<=0){st.mid=true;lesson.zone={x:-120,y:-12.5,w:6,h:25};
+      const g=st.g1&&s.gear==='2',v=kmh(s)>SPEED_MAX;
+      if(!g&&!v)deduct(5,'Thay đổi số: 25 m đầu sai cả số và tốc độ');
+      else if(!g)deduct(5,'Thay đổi số: 25 m đầu chưa đúng số');
+      else if(!v)deduct(5,`Thay đổi số: 25 m đầu chỉ đạt ${Math.round(kmh(s))} km/h`);
+      else say('Đúng số và tốc độ. Giờ về số 1, giảm tốc.','good');
+    }
+  },
+  done(){const g=s.gear==='1',v=kmh(s)<=SPEED_MAX;
+    if(!g&&!v)deduct(5,'Thay đổi số: 25 m sau sai cả số và tốc độ');
+    else if(!g)deduct(5,'Thay đổi số: 25 m sau chưa về số 1');
+    else if(!v)deduct(5,'Thay đổi số: 25 m sau chưa giảm tốc');
+  }},
+ finish:{no:11,name:'Kết thúc',pose:{x:-120,y:-30,h:HN,engine:true,gear:'N',hb:false},enter:()=>true,exit:frontIn(-126,-114,-70,-48),
+  text:'Bật xi nhan phải rồi đi qua vạch kết thúc.',keys:['br'],hl:['blinkR'],zone:{x:-120,y:-48,w:6,h:1},
+  done(){if(s.blink!==1)deduct(5,'Kết thúc: không bật xi nhan phải khi qua vạch')}},
+ danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:30,y:-70,h:0,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
+  text:'Chạy trên 8 km/h, còi sẽ báo bất ngờ. Phanh dừng trong 3 giây, bật đèn khẩn cấp trong 5 giây. Có tín hiệu đi tiếp thì tắt đèn rồi mới đi.',keys:['clutch','gas','brake','haz'],hl:[],
+  tick(st,dt){st.t=(st.t||0)+dt;if(!exam.d&&(st.t>6||kmh(s)>8)&&st.t>2)startDanger()}},
+};
+function checkPark(st,dt,b,headingOk){
+  if(st.parked)return;
+  if(bodyIn(b)&&Math.abs(s.v)<.05){
+    st.p=(st.p||0)+dt;
+    if(st.p>.6){
+      if(!headingOk()){dq(`${st===exam.st?ST[exam.ids[exam.i]].name:'Ghép xe'}: đi sai hình quy định`);return}
+      st.parked=true;snd.done();say('Đã ghép đúng vị trí. Tiến ra và đi tiếp.','good');
+      lesson.zone=null;
+    }
+  }else st.p=0;
+}
+const stationLesson=k=>({id:'exam-'+k,name:ST[k].name,sub:(ST[k].lines?'Có vạch giới hạn, ':'')+'chấm điểm như thi thật',exam:true,ids:[k],pose:ST[k].pose,steps:[]});
+const EXAM_FULL={id:'exam',name:'Thi thử sa hình đủ bài',sub:'11 bài và tình huống nguy hiểm, 18 phút, 100 điểm, đạt từ 80',exam:true,full:true,ids:['start','ped','vet','light','curve','hill','doc','ngang','rail','gear','finish'],pose:ST.start.pose,steps:[]};
+const EXAM_SINGLES=['start','ped','vet','light','curve','hill','doc','ngang','rail','danger','gear','finish'].map(stationLesson);
+function startExam(l){
+  exam={l,ids:l.ids,i:0,active:false,st:{},score:100,log:[],t:0,sT:0,over:false,reason:'',pass:false,full:!!l.full,light:'green',speedT:0,timeT:0,rpmHigh:false,lineOn:false,lineT:0,d:null,dI:0,hudT:0};
+  if(l.full){const g=[2,3,5,8];exam.dI=g[Math.floor(Math.random()*g.length)]}
+  lesson.zone=null;
+  renderExam();
+}
+let logSeq=0;
+function deduct(n,why){
+  if(!exam||exam.over)return;
+  if(!why.includes(':')&&exam.active)why=ST[exam.ids[exam.i]].name+': '+why;
+  exam.score-=n;exam.log.push({n,why});
+  snd.tone(300,.14,.18,'square',200);say(`−${n} điểm: ${why}`,'bad','ded'+(++logSeq));
+  renderExam();
+  if(exam.score<80)dq('Điểm dưới 80');
+}
+function dq(why){
+  if(!exam||exam.over)return;
+  exam.over=true;exam.pass=false;exam.reason=why;exam.log.push({n:0,why:'Đình chỉ: '+why});
+  snd.thud();say('Đình chỉ sát hạch: '+why,'bad','dq');
+  endExamUi();
+}
+function endExam(){
+  if(!exam||exam.over)return;
+  exam.over=true;exam.pass=exam.score>=80;
+  if(exam.pass){doneSet.add(exam.l.id);saveLocal();snd.done();say(`Đạt: ${exam.score} điểm`,'good','done')}
+  endExamUi();
+}
+function endExamUi(){exam.light='green';lesson.zone=null;$('dangerFlash').hidden=true;setHL([]);hlKey='';renderExam()}
+function startDanger(){
+  exam.d={t:0,phase:1,stopped:false,hz:false,fS:false,fH:false,done:false};
+  $('dangerFlash').hidden=false;lesson.zone=null;snd.grind();renderExam();
+}
+function tickDanger(dt){
+  const d=exam.d;d.t+=dt;
+  if(d.phase===1){
+    if(Math.floor(d.t/.5)!==Math.floor((d.t-dt)/.5))snd.tone(880,.2,.18,'square');
+    if(kmh(s)<.3)d.stopped=true;
+    if(s.hazard)d.hz=true;
+    if(d.t>3&&!d.stopped&&!d.fS){d.fS=true;deduct(10,'Tình huống nguy hiểm: không phanh dừng trong 3 giây')}
+    if(d.t>5&&!d.hz&&!d.fH){d.fH=true;deduct(10,'Tình huống nguy hiểm: không bật đèn khẩn cấp trong 5 giây')}
+    if(d.t>=7){d.phase=2;$('dangerFlash').hidden=true;snd.done();say('Có tín hiệu đi tiếp: tắt đèn khẩn cấp rồi mới đi.','good');renderExam()}
+  }else{
+    if(Math.abs(s.v)>.4){
+      if(s.hazard)deduct(10,'Tình huống nguy hiểm: không tắt đèn trước khi đi tiếp');
+      d.done=true;exam.dDone=true;renderExam();
+    }
+  }
+}
+function tickExam(dt){
+  if(!exam||exam.over)return;
+  exam.t+=dt;
+  const key=exam.ids[exam.i],cur=ST[key],rpm=s.we*RPM;
+  /* Lỗi chung của mọi bài */
+  if(s.engine&&rpm>RPM_MAX&&!exam.rpmHigh){exam.rpmHigh=true;deduct(5,'Tốc độ động cơ quá 4000 vòng/phút')}
+  else if(rpm<RPM_MAX-200)exam.rpmHigh=false;
+  if(kmh(s)>SPEED_MAX&&!(exam.active&&cur.noSpeed)){exam.speedT+=dt;if(exam.speedT>=3){exam.speedT-=3;deduct(1,`Quá tốc độ ${SPEED_MAX} km/h`)}}
+  if(exam.full&&exam.t>TOTAL_LIMIT){exam.timeT+=dt;if(exam.timeT>=3){exam.timeT-=3;deduct(1,'Tổng thời gian quá 18 phút')}}
+  if(exam.over)return;
+  /* Bánh xe và lề đường */
+  let out=-9;for(const[x,y]of examWheels()){const o=examOutside(x,y);if(o>out)out=o}
+  if(exam.active&&cur.lines){
+    if(out>1.2){dq('Lái xe lên vỉa hè');return}
+    if(out>0){
+      if(!exam.lineOn){exam.lineOn=true;exam.lineT=0;deduct(5,'Bánh xe đè vạch giới hạn')}
+      else{exam.lineT+=dt;if(exam.lineT>=5){exam.lineT-=5;deduct(5,'Bánh xe đè vạch quá 5 giây')}}
+    }else exam.lineOn=false;
+  }else if(out>.4){dq('Lái xe lên vỉa hè');return}
+  if(exam.over)return;
+  /* Tình huống nguy hiểm */
+  if(exam.d&&!exam.d.done){tickDanger(dt);if(exam.over)return;if(exam.full)return}
+  if(exam.full&&!exam.d&&!exam.active&&exam.i===exam.dI&&kmh(s)>5){exam.dW=(exam.dW||0)+dt;if(exam.dW>1.2){startDanger();return}}
+  /* Tiến trình bài */
+  if(!exam.active){
+    lesson.zone=cur.zone||null;
+    if(cur.enter()){exam.active=true;exam.st={};exam.sT=0;exam.lineOn=false;if(cur.onEnter)cur.onEnter(exam.st);if(cur.no>1)snd.tick(780);renderExam()}
+    else{setHLcached([]);return}
+  }
+  exam.sT+=dt;
+  if(cur.limit&&exam.sT>=cur.limit){exam.sT-=cur.limit;deduct(5,`${cur.name}: quá 2 phút`);if(exam.over)return}
+  setHLcached(cur.hl||[]);
+  if(cur.tick)cur.tick(exam.st,dt);
+  if(exam.over)return;
+  if(cur.exit()){
+    if(cur.done)cur.done(exam.st);
+    if(exam.over)return;
+    exam.active=false;exam.i++;
+    if(exam.i>=exam.ids.length){endExam();return}
+    exam.st={};lesson.zone=ST[exam.ids[exam.i]].zone||null;renderExam();
+  }
+  exam.hudT+=dt;if(exam.hudT>.25){exam.hudT=0;renderHud()}
+}
+const mmss=t=>{const v=Math.max(0,Math.floor(t));return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')};
+function renderHud(){
+  if(!exam)return;
+  const cur=ST[exam.ids[exam.i]];
+  const parts=[`<b class="${exam.score<85?'low':''}">${exam.score}</b><span>/100 điểm</span>`];
+  if(exam.full)parts.push(`<i>Tổng ${mmss(exam.t)} / 18:00</i>`);
+  if(!exam.over&&exam.active&&cur&&cur.limit)parts.push(`<i>Bài này ${mmss(exam.sT)} / 02:00</i>`);
+  $('examHud').innerHTML=parts.join('');
+}
+function renderExam(){
+  if(!exam)return;
+  renderHud();
+  $('btnBelt').classList.toggle('on',s.belt);
+  const log=$('examLog');
+  const lines=exam.log.map(e=>`<li>${e.n?`<b>−${e.n}</b> `:''}${e.why}</li>`);
+  if(exam.over){
+    $('stepNo').textContent=exam.pass?'KẾT QUẢ: ĐẠT':'KẾT QUẢ: KHÔNG ĐẠT';
+    $('stepText').textContent=exam.pass?`Đạt ${exam.score} điểm`:(exam.reason||'Không đạt');
+    $('stepWhy').textContent=exam.log.length?(exam.pass?'Các lỗi đã bị trừ điểm:':'Quá trình thi:'):'Không có lỗi nào.';
+    $('stepKeys').innerHTML='';$('need').hidden=true;
+    log.innerHTML=lines.join('');log.classList.add('all');
+    $('lessonBtns').hidden=false;
+    $('lessonBtns').innerHTML='<button class="primary" id="btnAgain">Thi lại</button><button class="ghost" id="btnPick">Chọn bài khác</button>';
+    $('btnAgain').onclick=()=>loadLesson(exam.l);$('btnPick').onclick=openMenu;
+    return;
+  }
+  log.classList.remove('all');log.innerHTML=lines.slice(-3).join('');
+  $('lessonBtns').hidden=true;
+  const cur=ST[exam.ids[exam.i]],d=exam.d;
+  const nd=$('need');
+  if(d&&!d.done&&exam.full||d&&!d.done&&cur.no===0){
+    nd.hidden=false;nd.textContent=d.phase===1?'TÌNH HUỐNG NGUY HIỂM: phanh dừng ngay, bật đèn khẩn cấp (G).':'Tắt đèn khẩn cấp (G) rồi mới đi tiếp.';
+  }else nd.hidden=true;
+  const tot=exam.ids.length;
+  $('stepNo').textContent=(exam.full?`BÀI ${cur.no} / ${tot}`:'LUYỆN TỪNG BÀI')+(exam.active?'':' · ĐANG ĐI TỚI');
+  $('stepText').textContent=cur.name;
+  $('stepWhy').textContent=cur.text;
+  $('stepKeys').innerHTML=chipsHtml(cur.keys||[]);
+}
+
+/* ---------- Vòng lặp ---------- */
+const POS=window.__POS;let lastDrvText='',lastReco='',lastWheelTxt='',lastSlope='',blinkOn=false;
+function renderUI(t){
+  for(const n of['clutch','brake','gas']){
+    const v=s[n],P=PED[n];
+    P.plate.style.top=`calc(${(v*100).toFixed(1)}% - ${(v*30).toFixed(1)}px)`;
+    P.fill.style.height=(v*100).toFixed(1)+'%';
+    const tx=Math.round(v*100)+'%';if(P.pv.textContent!==tx){P.pv.textContent=tx;P.track.setAttribute('aria-valuenow',Math.round(v*100))}
+  }
+  const[kx,ky]=POS[s.gear];$('knob').style.transform=`translate(${kx}px,${ky}px)`;
+  if($('knobT').textContent!==s.gear)$('knobT').textContent=s.gear;
+  $('btnIgn').classList.toggle('on',s.engine);$('btnIgn').firstChild.textContent=s.engine?'Tắt máy ':s.crank>0?'Đang đề ':'Nổ máy ';
+  $('btnHb').classList.toggle('on',s.hb);$('btnHb').firstChild.textContent=s.hb?'Đang kéo ':'Phanh tay ';
+  $('blinkL').classList.toggle('on',s.blink===-1);$('blinkR').classList.toggle('on',s.blink===1);
+  const a=Math.round(Math.abs(s.steer)*100);
+  const wt=a<4?'Thẳng':(s.steer>0?'Lái phải ':'Lái trái ')+a+'%';
+  if(wt!==lastWheelTxt){$('wheelText').textContent=wt;lastWheelTxt=wt}
+  const d=driveLabel();if(d!==lastDrvText){$('drvText').textContent=d;lastDrvText=d}
+  const rpm=s.we*RPM;let r='';
+  if(s.engine&&s.gear!=='N'&&s.gear!=='R'&&s.clutch<.3){if(rpm>3200&&s.gear!=='5')r='↑ Nên lên số';else if(rpm<1050&&+s.gear>1&&kmh(s)>2)r='↓ Nên về số'}
+  if(r!==lastReco){$('reco').textContent=r;lastReco=r}
+  const sl=slopeX(s.x+Math.cos(s.h)*1.3,s.y+Math.sin(s.h)*1.3);let txt='';
+  if(sl){const up=sl*Math.cos(s.h)>0;txt=(up?'▲ Đang lên dốc':'▼ Đang xuống dốc')+' 10%'}
+  if(txt!==lastSlope){$('slopeChip').textContent=txt;$('slopeChip').hidden=!txt;lastSlope=txt}
+  const co=$('coach');if(coachT&&t>coachT){co.style.opacity=0;coachT=0}
+}
+function handleEvents(){
+  for(const ev of s.ev){
+    if(ev==='started'){snd.tone(120,.2,.2,'sawtooth',60)}
+    else if(ev.startsWith('stall')){
+      stats.stalls++;snd.thud();
+      if(lesson&&lesson.exam&&exam&&!exam.over)deduct(5,'Xe bị chết máy');
+      const c=ev.split(':')[1];
+      say({hb:'Chết máy: phanh tay chưa nhả nên xe không đi được.',brake:'Chết máy: xe gần dừng mà chưa đạp côn.',high:'Chết máy: số quá cao so với tốc độ. Về số thấp hơn.',fast:'Chết máy: nhả côn nhanh quá hoặc thiếu ga.'}[c],'bad');
+    }
+  }
+  s.ev.length=0;
+}
+const DT=1/240;let acc=0,last=0,hitCd=0;
+function frame(t){
+  requestAnimationFrame(frame);
+  /* Xe tạm dừng khi đang mở danh sách bài */
+  const dt=$('menu').hidden?Math.min(.05,(t-last)/1000||0):0;last=t;
+  updatePedals(s,inp,dt);
+  acc+=dt;
+  const px=s.x,py=s.y,ph=s.h;
+  const road=isOnRoad(s.x+Math.cos(s.h)*1.3,s.y+Math.sin(s.h)*1.3);
+  while(acc>=DT){stepCar(s,DT,road);acc-=DT}
+  const b=isBlocked(s);
+  if(b){s.x=px;s.y=py;s.h=ph;
+    if(lesson&&lesson.exam&&exam&&!exam.over&&Math.abs(s.v)>.3)dq('Xử lý không hợp lý gây tai nạn');
+    if(Math.abs(s.v)>.8){snd.thud();say(b==='wall'?'Đụng tường rào. Lùi lại.':b==='tree'?'Đụng cây. Lùi lại.':'Đụng nhà. Lùi lại.','bad','crash')}
+    s.v=0}
+  if(s.blink&&s.blinkTurn>.75&&Math.abs(s.steer)<.15){s.blink=0}
+  if((s.blink||s.hazard)&&Math.floor(t/380)!==Math.floor((t-dt*1000)/380))snd.tick(520);
+  $('btnBelt').classList.toggle('on',s.belt);$('btnHaz').classList.toggle('on',s.hazard);
+  // cọc
+  const co=Math.cos(s.h),si=Math.sin(s.h);
+  for(const k of cones){
+    const dx=k.x-s.x,dy=k.y-s.y,lx=dx*co+dy*si,ly=-dx*si+dy*co;
+    if(lx>-CAR.rear-.2&&lx<CAR.front+.2&&Math.abs(ly)<CAR.width/2+.2&&Math.abs(s.v)>.05){
+      k.vx=s.v*co*1.2+(ly>=0?-si:si)*.7;k.vy=s.v*si*1.2+(ly>=0?co:-co)*.7;
+      if(!k.hit){k.hit=true;stats.cones++;snd.tone(240,.1,.2,'triangle');say('Đụng cọc!','bad','cone')}
+    }
+    k.x+=k.vx*dt;k.y+=k.vy*dt;k.vx*=.94;k.vy*=.94;
+  }
+  // gợi ý khi chạy
+  const rpm=s.we*RPM;
+  if(s.engine){
+    if(rpm>5600&&s.clutch<.5&&s.gear!=='N')say('Máy gào quá. Lên số hoặc nhả ga.','warn','rev');
+    if(s.hb&&s.v>1.5)say('Xe đang chạy mà phanh tay còn kéo.','warn','hbmove');
+    if(s.gear==='N'&&s.gas>.5&&rpm>3500)say('Đang số N nên ga không làm xe đi.','warn','ngas');
+  }
+  if(!road&&Math.abs(s.v)>1)say('Xe đã ra khỏi đường.','warn','off');
+  handleEvents();
+  tickLesson(dt);
+  snd.update();
+  if(opt.view==='cab')drawCabin(t);else drawWorld(t);
+  drawMini(t);drawWheel();drawGauges();drawDrive();renderUI(t);
+}
+syncOpts();
+loadLesson(LESSONS[0]);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
