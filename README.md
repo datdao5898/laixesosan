@@ -2,7 +2,7 @@
 
 Mô phỏng lái ô tô số sàn và 11 bài sa hình sát hạch hạng B, chạy ngay trên trình duyệt.
 
-**Dùng thử:** https://datdao5898.github.io/laixesosan/
+**Dùng thử:** https://laixesosan.pages.dev/
 
 - Tập côn, ga, phanh, điểm bám, lên xuống số, phanh tay.
 - Luyện từng bài thi hoặc thi đủ sa hình (18 phút, 100 điểm, đạt từ 80).
