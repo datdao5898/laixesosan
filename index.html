@@ -281,6 +281,27 @@ html,body{touch-action:manipulation}
   #app{grid-template-columns:minmax(0,1fr) 88px 124px}
   .pname{font-size:11px}
 }
+
+/* Popup chào người mới: chỉ hiện lần đầu, mở lại bằng nút "Cách dùng" */
+#welcome{position:fixed;inset:0;z-index:20;background:#0b0f14cc;display:flex;align-items:center;justify-content:center;
+  padding:16px;overflow:auto;-webkit-user-select:text;user-select:text}
+#welcomeCard{width:460px;max-width:100%;max-height:100%;overflow:auto;background:var(--dash);border:1px solid var(--line);
+  border-radius:12px;padding:18px 18px 16px;box-shadow:0 14px 40px #000a;display:flex;flex-direction:column;gap:12px}
+#welcomeCard h2{font:700 20px/1.25 var(--display);margin:0;color:var(--ink)}
+#welcomeCard .wsub{margin:-6px 0 0;color:var(--dim);font-size:13.5px}
+.wsteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.wsteps li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45}
+.wsteps .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--amber);color:#241700;
+  font:700 13px/24px var(--display);text-align:center}
+.wsteps b.c{color:var(--clutch)}.wsteps b.b{color:var(--brake)}.wsteps b.g{color:var(--gas)}.wsteps b.a{color:var(--amber)}
+.wsteps small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px}
+.wbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.wbtns .primary{flex:1 1 140px;padding:11px 14px;font-size:14px}
+.wbtns .ghost{flex:1 1 180px;padding:11px 14px;font-size:14px;text-align:center;text-decoration:none;color:var(--ink);font-weight:600}
+.wbtns .ghost:hover{border-color:var(--amber)}
+.only-tc{display:none}
+@media (pointer:coarse){.only-kb{display:none}.only-tc{display:inline}}
+@media (max-height:520px){#welcomeCard{padding:12px 14px;gap:8px}#welcomeCard h2{font-size:17px}.wsteps{gap:6px}.wsteps li{font-size:13px}.wsteps small{display:none}}
 </style>
 </head>
 <body>
@@ -309,6 +330,7 @@ html,body{touch-action:manipulation}
     </div>
     <div id="topbar">
       <div class="opts">
+        <button id="optHelp" aria-haspopup="dialog">Cách dùng</button>
         <button id="optView">Vào khoang lái <kbd>V</kbd></button>
         <button id="optCam" aria-pressed="true">Xe luôn hướng lên</button>
         <button id="optPath" aria-pressed="true">Đường dự đoán</button>
@@ -390,6 +412,25 @@ html,body{touch-action:manipulation}
       </div>
     </div>
   </section>
+</div>
+
+<div id="welcome" hidden>
+  <div id="welcomeCard" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+    <h2 id="welcomeTitle">Mới vào? Xem nhanh cách dùng</h2>
+    <p class="wsub">Tập lái xe số sàn ngay trên trình duyệt, chỉ cần 4 điều sau:</p>
+    <ol class="wsteps">
+      <li><span class="n">1</span><span>Làm theo <b class="a">khung hướng dẫn</b> ở góc trên bên trái. Bộ phận cần thao tác sẽ <b class="a">sáng viền vàng</b>.</span></li>
+      <li><span class="n">2</span><span>Ba bàn đạp: <b class="c">CÔN</b>, <b class="b">PHANH</b>, <b class="g">GA</b>.
+        <small><span class="only-tc">Kéo bàn đạp xuống để đạp.</span><span class="only-kb">Bàn phím: <kbd>Space</kbd> côn, <kbd>K</kbd> phanh, <kbd>I</kbd> ga. Hoặc kéo bàn đạp bằng chuột.</span></small></span></li>
+      <li><span class="n">3</span><span>Đạp hết côn, bấm <b>Nổ máy</b> rồi chọn số trên <b>cần số</b>.
+        <small><span class="only-tc">Xoay vô lăng hoặc giữ nút Trái/Phải để đánh lái.</span><span class="only-kb">Phím <kbd>F</kbd> nổ máy, <kbd>1</kbd>–<kbd>5</kbd> vào số, <kbd>J</kbd> <kbd>L</kbd> đánh lái.</span></small></span></li>
+      <li><span class="n">4</span><span>Bấm vào <b>tên bài</b> trong khung hướng dẫn để chọn bài khác: tập cơ bản, 11 bài sa hình hoặc thi thử.</span></li>
+    </ol>
+    <div class="wbtns">
+      <button class="primary" id="welcomeStart">Bắt đầu tập</button>
+      <a class="ghost" id="welcomeMore" href="huong-dan">Xem hướng dẫn chi tiết →</a>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -666,6 +707,7 @@ const GEARKEY={Digit1:'1',Digit2:'2',Digit3:'3',Digit4:'4',Digit5:'5',Numpad1:'1
 addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   const c=e.code;
+  if(!$('welcome').hidden){if(c==='Escape')closeWelcome();return}
   if(c==='Escape'){$('menu').hidden=true;return}
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(c))e.preventDefault();
   snd.init();
@@ -1777,6 +1819,19 @@ function frame(t){
 }
 syncOpts();
 loadLesson(LESSONS[0]);
+
+/* Popup chào người mới */
+function openWelcome(){$('welcome').hidden=false;$('welcomeStart').focus()}
+function closeWelcome(){
+  $('welcome').hidden=true;
+  try{localStorage.setItem('sts-welcome','1')}catch(e){}
+}
+$('welcomeStart').addEventListener('click',closeWelcome);
+$('welcomeMore').addEventListener('click',()=>{try{localStorage.setItem('sts-welcome','1')}catch(e){}});
+$('welcome').addEventListener('click',e=>{if(e.target===$('welcome'))closeWelcome()});
+$('optHelp').addEventListener('click',openWelcome);
+{let seen=null;try{seen=localStorage.getItem('sts-welcome')}catch(e){}
+ if(!seen&&!doneSet.size)openWelcome()}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
 requestAnimationFrame(frame);
 </script>
