@@ -605,6 +605,8 @@ const opt={heading:true,path:true,sound:true,view:'top'};
 let doneSet=new Set();
 try{doneSet=new Set(JSON.parse(localStorage.getItem('sts-done')||'[]'))}catch(e){}
 try{const c=JSON.parse(localStorage.getItem('sts-opt')||'null');if(c)Object.assign(opt,c)}catch(e){}
+loadLesson.n=0;
+function track(ev,p){try{(window.dataLayer=window.dataLayer||[]).push(Object.assign({event:ev},p))}catch(e){}}
 function saveLocal(){try{localStorage.setItem('sts-done',JSON.stringify([...doneSet]));localStorage.setItem('sts-opt',JSON.stringify(opt))}catch(e){}}
 const cam={x:0,y:0,a:0,z:13};
 
@@ -620,6 +622,7 @@ function loadLesson(l){
   $('menu').hidden=true;$('lessonBtns').hidden=true;$('need').hidden=true;
   $('examBox').hidden=!l.exam;$('examBtns').hidden=!l.exam;$('dangerFlash').hidden=true;
   if(l.exam)startExam(l);
+  if(loadLesson.n++)track('lesson_start',{lesson_id:l.id,lesson_name:l.name});
   renderLesson();
 }
 function chipsHtml(keys){return keys.map(k=>{const[c,txt]=K[k];return`<span><kbd>${c}</kbd> ${txt}</span>`}).join('')}
@@ -667,7 +670,7 @@ function tickLesson(dt){
   if(miss){if(nd.textContent!==miss.m)nd.textContent=miss.m;nd.hidden=false;setHLcached(miss.hl);stepHold=0;return}
   nd.hidden=true;setHLcached(st.hl||[]);
   if(st.done(s,mem)){stepHold+=dt;if(stepHold>.18){stepHold=0;stepIdx++;snd.tick(880);
-      if(stepIdx>=lesson.steps.length){finished=true;doneSet.add(lesson.id);saveLocal();snd.done();say('Hoàn thành bài!','good','done');nd.hidden=true}
+      if(stepIdx>=lesson.steps.length){finished=true;track('lesson_complete',{lesson_id:lesson.id,lesson_name:lesson.name,stalls:stats.stalls});doneSet.add(lesson.id);saveLocal();snd.done();say('Hoàn thành bài!','good','done');nd.hidden=true}
       renderLesson()}}
   else stepHold=0;
 }
@@ -1625,11 +1628,13 @@ function dq(why){
   if(!exam||exam.over)return;
   exam.over=true;exam.pass=false;exam.reason=why;exam.log.push({n:0,why:'Đình chỉ: '+why});
   snd.thud();say('Đình chỉ sát hạch: '+why,'bad','dq');
+  track('exam_fail',{lesson_id:exam.l.id,lesson_name:exam.l.name,score:exam.score,reason:why});
   endExamUi();
 }
 function endExam(){
   if(!exam||exam.over)return;
   exam.over=true;exam.pass=exam.score>=80;
+  track(exam.pass?'exam_pass':'exam_fail',{lesson_id:exam.l.id,lesson_name:exam.l.name,score:exam.score});
   if(exam.pass){doneSet.add(exam.l.id);saveLocal();snd.done();say(`Đạt: ${exam.score} điểm`,'good','done')}
   endExamUi();
 }
