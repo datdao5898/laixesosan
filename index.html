@@ -607,6 +607,13 @@ try{doneSet=new Set(JSON.parse(localStorage.getItem('sts-done')||'[]'))}catch(e)
 try{const c=JSON.parse(localStorage.getItem('sts-opt')||'null');if(c)Object.assign(opt,c)}catch(e){}
 loadLesson.n=0;
 function track(ev,p){try{(window.dataLayer=window.dataLayer||[]).push(Object.assign({event:ev},p))}catch(e){}}
+const clk={c:0,k:0,sc:0,sk:0};
+addEventListener('pointerdown',()=>{clk.c++},{capture:true,passive:true});
+addEventListener('keydown',e=>{if(!e.repeat)clk.k++},{capture:true});
+function flushClicks(){const dc=clk.c-clk.sc,dk=clk.k-clk.sk;if(!dc&&!dk)return;clk.sc=clk.c;clk.sk=clk.k;
+  track('session_clicks',{click_count:dc,key_count:dk,click_total:clk.c,key_total:clk.k})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushClicks()});
+addEventListener('pagehide',flushClicks);
 function saveLocal(){try{localStorage.setItem('sts-done',JSON.stringify([...doneSet]));localStorage.setItem('sts-opt',JSON.stringify(opt))}catch(e){}}
 const cam={x:0,y:0,a:0,z:13};
 
