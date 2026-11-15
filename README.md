@@ -12,7 +12,9 @@ Mô phỏng lái ô tô số sàn và 11 bài sa hình sát hạch hạng B, ch�
 
 ## Chạy trên máy
 
-Mở `index.html` bằng trình duyệt. Không cần cài đặt gì.
+Mở `index.html` bằng trình duyệt là lái được ngay, không cần cài đặt gì.
+
+Các liên kết sang trang hướng dẫn dùng đường dẫn không đuôi (`/huong-dan`) như trên trang thật, nên muốn bấm được chúng thì chạy qua một máy chủ tĩnh có hỗ trợ kiểu đường dẫn này, ví dụ `npx serve`.
 
 ## Pháp lý
 

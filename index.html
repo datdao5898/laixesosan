@@ -533,6 +533,7 @@ const inZone=(s,z)=>{const cx=s.x+Math.cos(s.h)*1.3,cy=s.y+Math.sin(s.h)*1.3;ret
 const needEngine=s=>s.engine||s.crank>0?null:{m:'Máy đang tắt. Đạp côn rồi nổ máy.',hl:['clutch','ign']};
 const needGear=g=>s=>s.gear===g?null:{m:`Xe cần ở số ${g==='R'?'lùi (R)':g}. Đạp hết côn rồi vào số.`,hl:['clutch','shifter']};
 const needHbOff=s=>s.hb?{m:'Phanh tay vẫn đang kéo. Nhả phanh tay.',hl:['hb']}:null;
+const needHbOn=s=>s.hb?null:{m:'Phanh tay đã nhả quá sớm. Đạp phanh cho xe dừng rồi kéo lại phanh tay.',hl:['brake','hb']};
 const K={clutch:['Space','giữ để đạp côn'],bite:['X','giữ ở điểm bám'],gas:['I','ga'],brake:['K','phanh'],hb:['H','phanh tay'],ign:['F','nổ máy'],steer:['J L','đánh lái'],bl:['Q','xi nhan trái'],br:['E','xi nhan phải'],belt:['T','dây an toàn'],haz:['G','đèn khẩn cấp'],view:['V','đổi góc nhìn'],look:['B','nhìn sau']};
 const startPos=(rest={})=>Object.assign({engine:true,gear:'N',hb:false},rest);
 function departSteps(g='1',target=10){return[
@@ -588,9 +589,9 @@ turnLesson('left','Rẽ trái','Đi qua tâm giao lộ rồi mới vào làn',-1
   {t:'Đạp côn và phanh, dừng trong khung',why:'Toàn bộ thân xe phải nằm trong vạch trắng khi dừng hẳn.',keys:['clutch','brake'],hl:['clutch','brake'],need:[s=>carCorners(s).every(([x,y])=>x>BAY.x0&&x<BAY.x1&&y>BAY.y0&&y<BAY.y1)?null:{m:'Xe đã ra khỏi khung. Chỉnh lại cho cả thân xe nằm trong vạch trắng.',hl:['clutch','brake','wheel']}],done:s=>kmh(s)<.3},
 ]},
 {id:'hill',name:'Khởi hành ngang dốc',sub:'Dốc 10%, không để xe trôi lùi',pose:{x:58,y:-62,h:Math.PI,engine:true,gear:'N',hb:true},zone:{x:43,y:-62,w:9,h:3.8},steps:[
-  {t:'Đạp hết côn, vào số 1',why:'Xe đang đứng giữa dốc, nhờ có phanh tay giữ lại.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine],done:s=>s.gear==='1'},
-  {t:'Nhả côn tới điểm bám rồi giữ nguyên',why:'Giữ X. Vòng tua tụt nhẹ, đầu xe hơi trồi lên. Lúc này máy đã bắt đầu kéo xe.',keys:['bite'],hl:['clutch'],need:[needEngine,needGear('1')],done:s=>clutchEngage(s.clutch)>.03&&s.hb},
-  {t:'Thêm ga tới khoảng 1800 vòng',why:'Dốc cần nhiều lực hơn đường bằng, không có ga là chết máy.',keys:['gas','bite'],hl:['gas'],need:[needEngine,needGear('1')],done:s=>s.we*RPM>1500&&s.gas>.05},
+  {t:'Đạp hết côn, vào số 1',why:'Xe đang đứng giữa dốc, nhờ có phanh tay giữ lại.',keys:['clutch'],hl:['clutch','shifter'],need:[needEngine,needHbOn],done:s=>s.gear==='1'},
+  {t:'Nhả côn tới điểm bám rồi giữ nguyên',why:'Giữ X. Vòng tua tụt nhẹ, đầu xe hơi trồi lên. Lúc này máy đã bắt đầu kéo xe.',keys:['bite'],hl:['clutch'],need:[needEngine,needGear('1'),needHbOn],done:s=>clutchEngage(s.clutch)>.03&&s.hb},
+  {t:'Thêm ga tới khoảng 1800 vòng',why:'Dốc cần nhiều lực hơn đường bằng, không có ga là chết máy.',keys:['gas','bite'],hl:['gas'],need:[needEngine,needGear('1'),needHbOn],done:s=>s.we*RPM>1500&&s.gas>.05},
   {t:'Vẫn giữ ga và nửa côn, nhả phanh tay',why:'Máy đã đỡ xe, nên xe không bị trôi lùi. Nếu xe vẫn trôi, thêm ga và nhả thêm chút côn.',keys:['hb'],hl:['hb'],need:[needEngine,needGear('1')],done:s=>!s.hb},
   {t:'Nhả côn dần, giữ ga, chạy lên đỉnh dốc',why:'Đi tới ô sáng trên đỉnh dốc.',keys:['gas'],hl:['clutch','gas'],need:[needEngine,needGear('1'),needHbOff],done:s=>inZone(s,{x:43,y:-62,w:9,h:3.8})},
 ]},
@@ -719,6 +720,7 @@ addEventListener('keydown',e=>{
   const c=e.code;
   if(!$('welcome').hidden){if(c==='Escape')closeWelcome();return}
   if(c==='Escape'){$('menu').hidden=true;return}
+  if(paused())return;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(c))e.preventDefault();
   snd.init();
   switch(c){
@@ -752,9 +754,11 @@ addEventListener('blur',()=>{look.back=false;Object.assign(inp,{gasKey:false,bra
 
 /* Nút điều khiển ăn ngay khi chạm. Trình duyệt không tạo sự kiện click khi đang có ngón khác giữ
    trên màn hình, mà người lái luôn phải giữ côn trong lúc vào số hoặc nhả phanh tay. */
+/* Xe tạm dừng khi đang mở danh sách bài hoặc popup "Cách dùng"; lúc đó nút và phím điều khiển cũng không ăn */
+function paused(){return!$('menu').hidden||!$('welcome').hidden}
 function press(el,fn){
-  el.addEventListener('pointerdown',e=>{if(e.button)return;snd.init();fn()});
-  el.addEventListener('click',e=>{if(e.detail===0){snd.init();fn()}if(el.blur)el.blur()});
+  el.addEventListener('pointerdown',e=>{if(e.button||paused())return;snd.init();fn()});
+  el.addEventListener('click',e=>{if(e.detail===0&&!paused()){snd.init();fn()}if(el.blur)el.blur()});
 }
 const PED={};
 document.querySelectorAll('.pedal').forEach(p=>{
@@ -1012,13 +1016,15 @@ function drawCar(c,t){
   }
   c.restore();
 }
+/* Hệ số làm mượt quy về 60 khung/giây, để màn 120 Hz và 60 Hz cho cùng một độ trễ */
+let fdt=0;const ease=r=>1-Math.pow(1-r,fdt*60);
 function updateCam(w,h){
   const speed=Math.abs(s.v);
   const base=Math.min(w,h)<520?10.5:14;
-  const zt=base*clamp(1.15-speed/22,.58,1.15);cam.z+=(zt-cam.z)*.03;
+  const zt=base*clamp(1.15-speed/22,.58,1.15);cam.z+=(zt-cam.z)*ease(.03);
   const la=clamp(s.v*.5,-6,9),tx=s.x+Math.cos(s.h)*(1.3+la),ty=s.y+Math.sin(s.h)*(1.3+la);
-  cam.x+=(tx-cam.x)*.12;cam.y+=(ty-cam.y)*.12;
-  let da=s.h-cam.a;da=Math.atan2(Math.sin(da),Math.cos(da));cam.a+=da*.08;
+  const e=ease(.12);cam.x+=(tx-cam.x)*e;cam.y+=(ty-cam.y)*e;
+  let da=s.h-cam.a;da=Math.atan2(Math.sin(da),Math.cos(da));cam.a+=da*ease(.08);
 }
 function drawWorld(t){
   const cv=$('world'),{w,h,d}=fit(cv),c=wctx;
@@ -1097,12 +1103,12 @@ function drawGauges(){
   c.fillStyle='#0d1218';c.strokeStyle=s.gear==='R'?'#ff9d2e':'#384552';c.lineWidth=1.5;rr(c,mx-17,y-22,34,44,6);c.fill();c.stroke();
   c.fillStyle=s.gear==='R'?'#ff9d2e':'#ffb53d';c.font='700 27px "Chakra Petch",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(s.gear,mx,y+1);
 }
-let phE=0,phW=0;
+let phE=0,phW=0,phC=0;
 function drawDrive(){
   const cv=$('driveCv');if(!cv.offsetParent)return;
   const{w,h,d}=fit(cv),c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);
   const e=clutchEngage(s.clutch),G=CAR.ratios[s.gear],rpm=s.we*RPM,y=h*.5,H=Math.min(h-14,64);
-  phE+=rpm*.00028;phW+=s.v*.09;
+  const fk=fdt*60;phE+=rpm*.00028*fk;phW+=s.v*.09*fk;
   const engW=w*.22,gx=w*.46,gbW=w*.18,wheelX=w-Math.min(H*.5,w*.11)-2,R=Math.min(H*.5,w*.11);
   // máy
   c.fillStyle='#2c3741';rr(c,0,y-H/2,engW,H,5);c.fill();
@@ -1116,8 +1122,8 @@ function drawDrive(){
   disc(fx,'#7f8c97',phE);
   // Đĩa côn
   const inRpm=G!==0?Math.abs(s.v)/CAR.R*Math.abs(G)*CAR.final*RPM:(e>.5?rpm:rpm*e);
-  window.__phC=(window.__phC||0)+inRpm*.00028;
-  const cx=fx+6+gap;disc(cx,e>.02?'#54b9ec':'#3b6f8c',window.__phC);
+  phC+=inRpm*.00028*fk;
+  const cx=fx+6+gap;disc(cx,e>.02?'#54b9ec':'#3b6f8c',phC);
   c.fillStyle='#57626c';c.fillRect(cx+6,y-3,gx-cx-6,6);
   // Hộp số
   c.fillStyle=G===0?'#2c3741':'#34414d';rr(c,gx,y-H/2,gbW,H,5);c.fill();
@@ -1359,9 +1365,9 @@ function drawCabin(t){
   const acc=(s.v-look.lastV)/dtm;look.lastV=s.v;
   const sl=slopeX(s.x+Math.cos(s.h)*1.3,s.y+Math.sin(s.h)*1.3);
   const pitchT=Math.atan(sl*Math.cos(s.h))+clamp(acc*.005,-.03,.03);
-  look.pitch+=(pitchT-look.pitch)*.06;
+  look.pitch+=(pitchT-look.pitch)*ease(.06);
   const yawT=look.back?Math.PI:look.drag+clamp(s.steer,-1,1)*.16;
-  look.yaw+=(yawT-look.yaw)*.14;
+  look.yaw+=(yawT-look.yaw)*ease(.14);
   /* Góc nhìn ngang khoảng 77 độ, gần tầm mắt người lái hơn ống kính góc rộng */
   const F=Math.max(w*.62,h*.6),cx=w/2,cy=h*(w/h<1.2?.5:.4);
   const b=(1-Math.cos(look.yaw))/2,eyeX=EYE.x-.5*b,eyeY=EYE.y+.37*b,eyeZ=EYE.z+.08*b;
@@ -1529,7 +1535,9 @@ const ST={
   text:'Cho hai bánh bên phải đi trên dải vệt bánh, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:-32,y:-69.2,w:12,h:1},
   tick(st){
     const[fr,,rr]=examWheels();
-    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=-32){st[flag]=true;if(Math.abs(p[1]+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
+    /* examWheels trả về mép ngoài lốp; chấm theo tim lốp nên lùi vào trong nửa bề rộng lốp */
+    const ty=CAR.tire/2*Math.cos(s.h);
+    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=-32){st[flag]=true;if(Math.abs(p[1]-ty+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
     chk(fr,'fOk','trước');chk(rr,'rOk','sau');
   }},
  light:{no:4,name:'Qua ngã tư có đèn tín hiệu (rẽ phải)',pose:{x:68,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(85,113,-74,-66),exit:frontIn(114,126,-58,-48),
@@ -1541,8 +1549,9 @@ const ST={
     if(exam.light==='green')st.g+=dt;
     const[fx,fy]=frontPt(),d=STOP_LIGHT-fx;
     if(exam.light==='red'){
-      checkStop(st,dt,d,x=>stopResult(x,'Ngã tư'));
-      if(fx>STOP_LIGHT+.5&&!st.ran&&!st.stopped){st.ran=true;deduct(10,'Ngã tư: vượt đèn đỏ')}
+      /* Đã vượt đèn đỏ rồi mới dừng thì chỉ tính lỗi vượt đèn. Dừng xong mà đi tiếp khi đèn còn đỏ vẫn là vượt đèn. */
+      checkStop(st,dt,d,x=>{if(!st.ran)stopResult(x,'Ngã tư');st.fx0=STOP_LIGHT-x});
+      if(!st.ran&&fx>(st.stopped?Math.max(STOP_LIGHT,st.fx0):STOP_LIGHT)+.5){st.ran=true;deduct(10,'Ngã tư: vượt đèn đỏ')}
     }
     if(fx>=STOP_LIGHT&&s.blink===1)st.sig=true;
     if(st.g>20&&!st.l20){st.l20=true;deduct(5,'Ngã tư: quá 20 giây từ khi đèn xanh chưa qua được')}
@@ -1571,7 +1580,7 @@ const ST={
  doc:{no:7,name:'Ghép xe dọc vào nơi đỗ',pose:{x:26,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-20,20,64,76),exit:frontIn(-40,-16,62,76),lines:true,limit:120,
   text:'Tiến qua nơi đỗ, lùi đuôi xe vào khung bên phải. Cả thân xe nằm trong vạch và dừng lại thì có tín hiệu, rồi tiến ra đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:0,y:63.2,w:2.8,h:5.6},
   tick(st,dt){checkPark(st,dt,EX_DOC,()=>Math.sin(s.h)>.85)},done(st){if(!st.parked)dq('Ghép dọc: chưa ghép được xe vào nơi đỗ')}},
- ngang:{no:8,name:'Ghép xe ngang vào nơi đỗ',pose:{x:-14,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-58,-22,62,76),exit:frontIn(-90,-58,64,76),lines:true,limit:120,
+ ngang:{no:8,name:'Ghép xe ngang vào nơi đỗ',pose:{x:-14,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-58,-22,62,76),exit:frontIn(-90,-62,64,76),lines:true,limit:120,
   text:'Tiến qua nơi đỗ, lùi chếch vào khung bên phải rồi trả lái để xe nằm song song với lề. Dừng có tín hiệu rồi đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:-44.75,y:64.6,w:8.5,h:2.8},
   tick(st,dt){checkPark(st,dt,EX_NGANG,()=>Math.cos(s.h)<-.9)},done(st){if(!st.parked)dq('Ghép ngang: chưa ghép được xe vào nơi đỗ')}},
  rail:{no:9,name:'Tạm dừng ở chỗ có đường sắt chạy qua',pose:{x:-120,y:62,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-126,-114,48,56),exit:frontIn(-126,-114,28,36),
@@ -1600,7 +1609,7 @@ const ST={
   done(){if(s.blink!==1)deduct(5,'Kết thúc: không bật xi nhan phải khi qua vạch')}},
  danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:30,y:-70,h:0,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
   text:'Chạy trên 8 km/h, còi sẽ báo bất ngờ. Phanh dừng trong 3 giây, bật đèn khẩn cấp trong 5 giây. Có tín hiệu đi tiếp thì tắt đèn rồi mới đi.',keys:['clutch','gas','brake','haz'],hl:[],
-  tick(st,dt){st.t=(st.t||0)+dt;if(!exam.d&&(st.t>6||kmh(s)>8)&&st.t>2)startDanger()}},
+  tick(st,dt){st.t=(st.t||0)+dt;if(!exam.d&&kmh(s)>8&&st.t>2)startDanger()}},
 };
 function checkPark(st,dt,b,headingOk){
   if(st.parked)return;
@@ -1662,13 +1671,14 @@ function tickDanger(dt){
   }else{
     if(Math.abs(s.v)>.4){
       if(s.hazard)deduct(10,'Tình huống nguy hiểm: không tắt đèn trước khi đi tiếp');
-      d.done=true;exam.dDone=true;renderExam();
+      d.done=true;renderExam();
     }
   }
 }
 function tickExam(dt){
   if(!exam||exam.over)return;
   exam.t+=dt;
+  exam.hudT+=dt;if(exam.hudT>.25){exam.hudT=0;renderHud()}
   const key=exam.ids[exam.i],cur=ST[key],rpm=s.we*RPM;
   /* Lỗi chung của mọi bài */
   if(s.engine&&rpm>RPM_MAX&&!exam.rpmHigh){exam.rpmHigh=true;deduct(5,'Tốc độ động cơ quá 4000 vòng/phút')}
@@ -1689,6 +1699,8 @@ function tickExam(dt){
   /* Tình huống nguy hiểm */
   if(exam.d&&!exam.d.done){tickDanger(dt);if(exam.over)return;if(exam.full)return}
   if(exam.full&&!exam.d&&!exam.active&&exam.i===exam.dI&&kmh(s)>5){exam.dW=(exam.dW||0)+dt;if(exam.dW>1.2){startDanger();return}}
+  /* Đi quá chậm qua đoạn chuyển bài nên còi chưa kịp báo: dời tình huống sang đoạn chuyển bài kế tiếp */
+  if(exam.full&&!exam.d&&exam.i>exam.dI){const n=[3,5,8].find(v=>exam.active?v>exam.i:v>=exam.i);if(n){exam.dI=n;exam.dW=0}}
   /* Tiến trình bài */
   if(!exam.active){
     lesson.zone=cur.zone||null;
@@ -1707,7 +1719,6 @@ function tickExam(dt){
     if(exam.i>=exam.ids.length){endExam();return}
     exam.st={};lesson.zone=ST[exam.ids[exam.i]].zone||null;renderExam();
   }
-  exam.hudT+=dt;if(exam.hudT>.25){exam.hudT=0;renderHud()}
 }
 const mmss=t=>{const v=Math.max(0,Math.floor(t));return String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0')};
 function renderHud(){
@@ -1750,7 +1761,7 @@ function renderExam(){
 }
 
 /* ---------- Vòng lặp ---------- */
-const POS=window.__POS;let lastDrvText='',lastReco='',lastWheelTxt='',lastSlope='',blinkOn=false;
+const POS=window.__POS;let lastDrvText='',lastReco='',lastWheelTxt='',lastSlope='';
 function renderUI(t){
   for(const n of['clutch','brake','gas']){
     const v=s[n],P=PED[n];
@@ -1787,11 +1798,10 @@ function handleEvents(){
   }
   s.ev.length=0;
 }
-const DT=1/240;let acc=0,last=0,hitCd=0;
+const DT=1/240;let acc=0,last=0;
 function frame(t){
   requestAnimationFrame(frame);
-  /* Xe tạm dừng khi đang mở danh sách bài */
-  const dt=$('menu').hidden?Math.min(.05,(t-last)/1000||0):0;last=t;
+  const dt=paused()?0:Math.min(.05,(t-last)/1000||0);last=t;fdt=dt;
   updatePedals(s,inp,dt);
   acc+=dt;
   const px=s.x,py=s.y,ph=s.h;
@@ -1813,7 +1823,7 @@ function frame(t){
       k.vx=s.v*co*1.2+(ly>=0?-si:si)*.7;k.vy=s.v*si*1.2+(ly>=0?co:-co)*.7;
       if(!k.hit){k.hit=true;stats.cones++;snd.tone(240,.1,.2,'triangle');say('Đụng cọc!','bad','cone')}
     }
-    k.x+=k.vx*dt;k.y+=k.vy*dt;k.vx*=.94;k.vy*=.94;
+    const damp=Math.pow(.94,dt*60);k.x+=k.vx*dt;k.y+=k.vy*dt;k.vx*=damp;k.vy*=damp;
   }
   // gợi ý khi chạy
   const rpm=s.we*RPM;
@@ -1844,7 +1854,6 @@ $('welcome').addEventListener('click',e=>{if(e.target===$('welcome'))closeWelcom
 $('optHelp').addEventListener('click',openWelcome);
 {let seen=null;try{seen=localStorage.getItem('sts-welcome')}catch(e){}
  if(!seen&&!doneSet.size)openWelcome()}
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
 requestAnimationFrame(frame);
 </script>
 </body>
