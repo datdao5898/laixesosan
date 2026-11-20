@@ -811,6 +811,7 @@ function openMenu(){
   head('Luyện từng bài thi');EXAM_SINGLES.forEach((l,i)=>add(l,i+1));
   const note=document.createElement('p');note.className='mnote';note.textContent=EXAM_NOTE;list.appendChild(note);
   const guide=document.createElement('a');guide.className='mlink';guide.href='huong-dan';guide.textContent='Hướng dẫn, barem điểm và câu hỏi thường gặp →';list.appendChild(guide);
+  const sh=document.createElement('a');sh.className='mlink';sh.href='sa-hinh/';sh.textContent='Hướng dẫn chi tiết từng bài sa hình, có video →';list.appendChild(sh);
   $('menu').hidden=false;
 }
 $('lessonName').onclick=openMenu;
@@ -1840,7 +1841,12 @@ function frame(t){
   drawMini(t);drawWheel();drawGauges();drawDrive();renderUI(t);
 }
 syncOpts();
-loadLesson(LESSONS[0]);
+{ /* Mở thẳng một bài sa hình từ trang /sa-hinh/<slug>: ?bai=<slug> */
+  const DEEP={'xuat-phat':'start','dung-xe-nhuong-nguoi-di-bo':'ped','vet-banh-xe-duong-vong-vuong-goc':'vet','nga-tu-den-tin-hieu':'light','duong-vong-quanh-co':'curve','dung-khoi-hanh-ngang-doc':'hill','ghep-xe-doc':'doc','ghep-xe-ngang':'ngang','duong-sat':'rail','thay-doi-so':'gear','ket-thuc':'finish','tinh-huong-nguy-hiem':'danger'};
+  let k=null;try{k=DEEP[new URLSearchParams(location.search).get('bai')]}catch(e){}
+  if(k){loadLesson(EXAM_SINGLES.find(l=>l.id==='exam-'+k));track('lesson_deeplink',{lesson_id:'exam-'+k})}
+  else loadLesson(LESSONS[0]);
+}
 
 /* Popup chào người mới */
 function openWelcome(){$('welcome').hidden=false;$('welcomeStart').focus()}

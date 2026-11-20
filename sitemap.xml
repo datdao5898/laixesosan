@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://laixesosan.com/</loc><lastmod>2026-11-06</lastmod><priority>1.0</priority></url>
-  <url><loc>https://laixesosan.com/huong-dan</loc><lastmod>2026-11-06</lastmod><priority>0.8</priority></url>
+  <url><loc>https://laixesosan.com/huong-dan</loc><lastmod>2026-11-20</lastmod><priority>0.8</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/</loc><lastmod>2026-11-20</lastmod><priority>0.8</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/xuat-phat</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/dung-xe-nhuong-nguoi-di-bo</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/vet-banh-xe-duong-vong-vuong-goc</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/nga-tu-den-tin-hieu</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/duong-vong-quanh-co</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/dung-khoi-hanh-ngang-doc</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/ghep-xe-doc</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/ghep-xe-ngang</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/duong-sat</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/thay-doi-so</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/ket-thuc</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
+  <url><loc>https://laixesosan.com/sa-hinh/tinh-huong-nguy-hiem</loc><lastmod>2026-11-20</lastmod><priority>0.7</priority></url>
   <url><loc>https://laixesosan.com/dieu-khoan</loc><lastmod>2026-11-06</lastmod><priority>0.3</priority></url>
   <url><loc>https://laixesosan.com/chinh-sach-bao-mat</loc><lastmod>2026-11-06</lastmod><priority>0.3</priority></url>
 </urlset>

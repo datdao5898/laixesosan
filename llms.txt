@@ -9,6 +9,22 @@ Người học tập các thao tác côn, ga, phanh, phanh tay, cần số 5 c�
 - [Sân Tập Số Sàn (ứng dụng)](https://laixesosan.com/): mô phỏng lái xe, chọn bài tập hoặc thi thử sa hình đủ bài
 - [Hướng dẫn và câu hỏi thường gặp](https://laixesosan.com/huong-dan): cách tập số sàn, điểm bám là gì, danh sách 11 bài sa hình hạng B, các lỗi bị trừ điểm, phím điều khiển
 
+## Hướng dẫn từng bài sa hình hạng B
+
+- [11 bài sa hình hạng B](https://laixesosan.com/sa-hinh/): danh sách bài, mỗi bài có yêu cầu, các bước, lỗi trừ điểm, video
+- [Bài 1: Xuất phát](https://laixesosan.com/sa-hinh/xuat-phat)
+- [Bài 2: Dừng xe nhường đường cho người đi bộ](https://laixesosan.com/sa-hinh/dung-xe-nhuong-nguoi-di-bo)
+- [Bài 3: Qua vệt bánh xe và đường vòng vuông góc](https://laixesosan.com/sa-hinh/vet-banh-xe-duong-vong-vuong-goc)
+- [Bài 4: Qua ngã tư có đèn tín hiệu](https://laixesosan.com/sa-hinh/nga-tu-den-tin-hieu)
+- [Bài 5: Qua đường vòng quanh co](https://laixesosan.com/sa-hinh/duong-vong-quanh-co)
+- [Bài 6: Dừng và khởi hành xe trên dốc](https://laixesosan.com/sa-hinh/dung-khoi-hanh-ngang-doc)
+- [Bài 7: Ghép xe dọc vào nơi đỗ](https://laixesosan.com/sa-hinh/ghep-xe-doc)
+- [Bài 8: Ghép xe ngang vào nơi đỗ](https://laixesosan.com/sa-hinh/ghep-xe-ngang)
+- [Bài 9: Tạm dừng ở chỗ có đường sắt chạy qua](https://laixesosan.com/sa-hinh/duong-sat)
+- [Bài 10: Thay đổi số trên đường bằng](https://laixesosan.com/sa-hinh/thay-doi-so)
+- [Bài 11: Kết thúc](https://laixesosan.com/sa-hinh/ket-thuc)
+- [Xử lý tình huống nguy hiểm](https://laixesosan.com/sa-hinh/tinh-huong-nguy-hiem)
+
 ## Thông tin
 
 - [Điều khoản sử dụng](https://laixesosan.com/dieu-khoan)
