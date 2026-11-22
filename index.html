@@ -1404,68 +1404,137 @@ function drawCabin(t){
 
 /* ---------- Thi sa hình hạng B ---------- */
 /* Điểm trừ theo Thông tư 05/2024/TT-BGTVT (18 phút, 100 điểm, đạt từ 80). Danh mục bài có đối chiếu Thông tư 12/2025/TT-BCA.
-   Kích thước sân là mô phỏng gần đúng, không phải số đo của trung tâm sát hạch. */
-const EXAM_NOTE='Điểm trừ theo Thông tư 05/2024/TT-BGTVT, danh mục và số thứ tự bài theo Thông tư 12/2025/TT-BCA. Sân này bố trí theo kiểu thường gặp ở các trung tâm sát hạch, đi lần lượt từ bài 1 đến bài 11. Kích thước sân là mô phỏng gần đúng. Đây là công cụ ôn tập, không thay thế quy định và sân thi thật.';
+   Hình các bài lấy kích thước theo QCVN 15:2026/BCA, bố cục sân là mô phỏng, không phải bản vẽ của một trung tâm cụ thể. */
+const EXAM_NOTE='Điểm trừ theo Thông tư 05/2024/TT-BGTVT, danh mục và số thứ tự bài theo Thông tư 12/2025/TT-BCA. Sân bố trí theo kiểu thường gặp ở các trung tâm sát hạch, đi lần lượt từ bài 1 đến bài 11; kích thước hình các bài theo QCVN 15:2026/BCA với xe dài 4,3 m, rộng 1,75 m. Đây là công cụ ôn tập, không thay thế quy định và sân thi thật.';
 const SPEED_MAX=24,RPM_MAX=4000,TOTAL_LIMIT=18*60,HW=Math.PI,HS=Math.PI/2,HN=-Math.PI/2;
-const EX_DOC={x0:-1.4,x1:1.4,y0:60.4,y1:66},EX_NGANG={x0:-49,x1:-40.5,y0:63.2,y1:66};
-const LIGHT_POS=[108.5,-64.5],STOP_LIGHT=106;
-const sCurvePts=(()=>{const p=[];for(let y=-42;y<=30;y+=3)p.push([120+5*Math.sin(2*Math.PI*(y+42)/36),y]);return p})();
+/* ---- Bản đồ sân thi: bố cục gọn kiểu sân sát hạch thật, kích thước hình theo QCVN 15:2026/BCA ----
+   Xe sát hạch mô phỏng dài a = 4,3 m, rộng b = 1,75 m. Quanh co và vuông góc rộng 2,2b = 3,85 m giữa hai vạch giới hạn,
+   ghép dọc (a+1) × (b+0,6) = 5,3 × 2,35 m, ghép ngang 1,5a × 1,25b = 6,45 × 2,19 m, dốc 10% dài 15 m với vạch dừng cách chân dốc 6 m,
+   vạch dừng đường sắt cách ray 5 m, bài thay đổi số trên đoạn thẳng dài hơn 100 m. Xe chỉ cắt ngang làn khác ở ngã tư có đèn.
+   Toạ độ: x tăng về phía đông, y tăng về phía nam (như trên màn hình). Đường chính rộng 7 m hai làn, xe đi làn bên phải. */
+const CURB=.35;
+const EX_DOC={x0:43.825,x1:46.175,y0:-22.5,y1:-17.2},EX_NGANG={x0:68,x1:74.45,y0:-22.5,y1:-20.31};
+const LIGHT_POS=[8.6,-4.9],STOP_LIGHT=8.5;
+const D2R=Math.PI/180;
+function arcPts(cx,cy,r,a0,a1){const n=Math.max(2,Math.ceil(Math.abs(a1-a0)*r/.5)),o=[];for(let i=1;i<=n;i++){const a=a0+(a1-a0)*i/n;o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)])}return o}
+/* w: bề rộng tới bó vỉa; lw: bề rộng chấm vạch (mặc định bằng w); cap: kéo dài nửa bề rộng ở đầu hoặc cuối để góc vuông kín */
 const STRIPS=[
-  {w:6,p:[[-118,-70],[24,-70]]},
-  {w:6.2,p:[[24,-70],[30,-70],[30,-48],[58,-48],[58,-70],[64,-70]]},
-  {w:6,p:[[64,-70],[113,-70]]},
-  {w:8,p:[[100,-70],[150,-70]]},
-  {w:8,p:[[120,-96],[120,-50]]},
-  {w:6,p:[[120,-50],[120,-42]]},
-  {w:4.8,p:sCurvePts},
-  {w:6,p:[[120,30],[120,70]]},
-  {w:6,p:[[120,70],[30,70]]},
-  {w:8,p:[[30,70],[-75,70]]},
-  {w:6,p:[[-75,70],[-120,70]]},
-  {w:6,p:[[-120,70],[-120,-58]]},
-  /* Vát góc chuyển giữa các bài cho dễ đi, không thuộc phần chấm vạch */
-  {w:6,p:[[120,56],[106,70]]},
-  {w:6,p:[[-106,70],[-120,56]]},
+  {w:7,p:[[32.6,27.4],[78,27.4],...arcPts(78,17.4,10,90*D2R,0),[88,-32],...arcPts(78,-32,10,0,-90*D2R),[-78,-42],...arcPts(-78,-32,10,-90*D2R,-180*D2R),[-88,26],...arcPts(-78,26,10,180*D2R,90*D2R),[16,36]]},
+  {w:7,p:[[-88,0],[88,0]]},
+  {w:7,p:[[0,-14],[0,36]]},
+  {w:7,p:[[17.5,-14],[17.5,-20],...arcPts(23.5,-20,6,180*D2R,270*D2R),[88,-26]]},
+  /* Đường vòng vuông góc: ba đoạn nối nhau bằng góc vuông */
+  {w:4.25,lw:3.85,cap:[0,1],p:[[16,37.75],[24,37.75]]},
+  {w:4.25,lw:3.85,cap:[1,1],p:[[24,37.75],[24,29.15]]},
+  {w:4.25,lw:3.85,cap:[1,0],p:[[24,29.15],[32.6,29.15]]},
+  /* Đường vòng quanh co: hai nửa vòng tròn ngược chiều nhau */
+  {w:4.25,lw:3.85,p:[[1.75,-14],...arcPts(6.125,-14,4.375,Math.PI,2*Math.PI),...arcPts(14.875,-14,4.375,Math.PI,0)]},
 ];
-const STRIP_SEGS=[];for(const st of STRIPS)for(let i=1;i<st.p.length;i++)STRIP_SEGS.push({seg:[st.p[i-1][0],st.p[i-1][1],st.p[i][0],st.p[i][1]],w:st.w});
-/* Khoảng cách từ một điểm ra ngoài mép đường, nhỏ hơn hoặc bằng 0 là còn trong đường */
+/* Bo góc ở ngã tư và ngã ba: [góc x, góc y, hướng x, hướng y, bán kính] */
+const FILLETS=[[3.5,-3.5,1,-1,6],[-3.5,-3.5,-1,-1,6],[3.5,3.5,1,1,6],[-3.5,3.5,-1,1,6],[-84.5,-3.5,1,-1,5],[-84.5,3.5,1,1,5],[84.5,-3.5,-1,-1,5],[84.5,3.5,-1,1,5],[84.5,-22.5,-1,1,5],[-3.5,32.5,-1,-1,5],[3.5,32.5,1,-1,5]];
+/* Vạch giới hạn trắng của hình quanh co và vuông góc, cách mép bó vỉa 0,1 m */
+const EX_LINES=(()=>{const d=1.975,o=[],PI=Math.PI;
+  o.push([[16,37.75+d],[24+d,37.75+d],[24+d,29.15+d],[32.6,29.15+d]],[[16,37.75-d],[24-d,37.75-d],[24-d,29.15-d],[32.6,29.15-d]]);
+  o.push([[6.125-4.375-d,-14],...arcPts(6.125,-14,4.375+d,PI,2*PI),...arcPts(14.875,-14,4.375-d,PI,0)]);
+  o.push([[6.125-4.375+d,-14],...arcPts(6.125,-14,4.375-d,PI,2*PI),...arcPts(14.875,-14,4.375+d,PI,0)]);
+  return o})();
+const STRIP_SEGS=[];
+for(const st of STRIPS){const p=st.p,lw=st.lw||st.w,cap=st.cap||[0,0];
+  for(let i=1;i<p.length;i++)STRIP_SEGS.push({seg:[p[i-1][0],p[i-1][1],p[i][0],p[i][1]],w:lw,f0:i===1,f1:i===p.length-1,e0:cap[0]?lw/2:.05,e1:cap[1]?lw/2:.05})}
+const filletArc=([cx,cy,sx,sy,R],r)=>{const ox=cx+sx*R,oy=cy+sy*R,a0=Math.atan2(cy-oy,0);let d=Math.atan2(0,cx-ox)-a0;d=Math.atan2(Math.sin(d),Math.cos(d));return[[ox+r*Math.cos(a0),oy+r*Math.sin(a0)],...arcPts(ox,oy,r,a0,a0+d)]};
+/* Khoảng cách từ một điểm ra ngoài mép đường hoặc vạch giới hạn của hình, nhỏ hơn hoặc bằng 0 là còn trong đường */
 function examOutside(x,y){
   let best=99;
-  for(const o of STRIP_SEGS){const d=segDist(x,y,o.seg)-o.w/2;if(d<best)best=d}
-  for(const b of[EX_DOC,EX_NGANG]){const dx=Math.max(b.x0-x,x-b.x1),dy=Math.max(b.y0-y,y-b.y1),d=Math.max(dx,dy);if(d<best)best=d}
+  for(const o of STRIP_SEGS){const[a,b,c,d]=o.seg,l=Math.hypot(c-a,d-b)||1,ux=(c-a)/l,uy=(d-b)/l,t=(x-a)*ux+(y-b)*uy,n=Math.abs((y-b)*ux-(x-a)*uy);
+    /* Đầu và cuối dải là mép cắt vuông, các chỗ nối bên trong dùng khoảng cách tới đoạn thẳng để mép ngoài chỗ cong liền mạch */
+    const dd=o.f0&&t<0?Math.max(n-o.w/2,-t-o.e0):o.f1&&t>l?Math.max(n-o.w/2,t-l-o.e1):Math.hypot(x-a-ux*Math.max(0,Math.min(l,t)),y-b-uy*Math.max(0,Math.min(l,t)))-o.w/2;if(dd<best)best=dd}
+  for(const[cx,cy,sx,sy,R]of FILLETS){const u=(x-cx)*sx,v=(y-cy)*sy;if(u>=0&&u<=R&&v>=0&&v<=R){const dd=R-Math.hypot(x-cx-sx*R,y-cy-sy*R);if(dd<best)best=dd}}
+  /* Ô đỗ mở về phía đường (cạnh y0): kéo dài 0,1 m vào lòng đường để chỗ giáp nhau không bị tính là vạch */
+  for(const b of[EX_DOC,EX_NGANG]){const dx=Math.max(b.x0-x,x-b.x1),dy=Math.max(b.y0-.1-y,y-b.y1),d=Math.max(dx,dy);if(d<best)best=d}
   return best;
 }
+const P0=q=>[q[0],q[1],0];
+/* Dải quad theo một đường gấp khúc: ext0/ext1 kéo dài hai đầu, chỗ nối kéo dài vừa đủ để không hở */
+function polyQuads(p,w,ext0,ext1){const o=[];
+  const jt=j=>{const[x0,y0]=p[j-1],[x1,y1]=p[j],[x2,y2]=p[j+1];const t=Math.abs(Math.atan2((x1-x0)*(y2-y1)-(y1-y0)*(x2-x1),(x1-x0)*(x2-x1)+(y1-y0)*(y2-y1)));return Math.min(w/2,w/2*Math.tan(t/2))+.02};
+  for(let i=1;i<p.length;i++){const[a,b]=p[i-1],[c,d]=p[i],l=Math.hypot(c-a,d-b)||1,ux=(c-a)/l,uy=(d-b)/l;
+    const e0=i===1?ext0:jt(i-1),e1=i===p.length-1?ext1:jt(i);
+    o.push(gLine(a-ux*e0,b-uy*e0,c+ux*e1,d+uy*e1,w))}return o}
+/* Đường song song lệch off mét sang một bên, kéo dài hai đầu */
+function offsetLine(p,off,ext0=0,ext1=0){const n=p.length,o=[];
+  const nrm=(P,Q)=>{const l=Math.hypot(Q[0]-P[0],Q[1]-P[1])||1;return[-(Q[1]-P[1])/l,(Q[0]-P[0])/l]};
+  for(let i=0;i<n;i++){const n1=i>0?nrm(p[i-1],p[i]):nrm(p[0],p[1]),n2=i<n-1?nrm(p[i],p[i+1]):n1;let mx=n1[0]+n2[0],my=n1[1]+n2[1];const ml=Math.hypot(mx,my)||1;mx/=ml;my/=ml;const k=off/Math.max(.3,mx*n1[0]+my*n1[1]);o.push([p[i][0]+mx*k,p[i][1]+my*k])}
+  const dir=(P,Q)=>{const l=Math.hypot(Q[0]-P[0],Q[1]-P[1])||1;return[(Q[0]-P[0])/l,(Q[1]-P[1])/l]};
+  const d0=dir(o[0],o[1]),d1=dir(o[n-2],o[n-1]);o[0]=[o[0][0]-d0[0]*ext0,o[0][1]-d0[1]*ext0];o[n-1]=[o[n-1][0]+d1[0]*ext1,o[n-1][1]+d1[1]*ext1];return o}
+/* Cắt đường gấp khúc thành vạch đứt: dài on mét, nghỉ off mét; skip(x,y) bỏ đoạn rơi vào vùng cấm */
+function dashQuads(p,w,on,off,skip){const o=[];let acc=0;
+  for(let i=1;i<p.length;i++){const[a,b]=p[i-1],[c,d]=p[i],l=Math.hypot(c-a,d-b);if(!l)continue;let t=0;
+    while(t<l-1e-9){const ph=(acc+t)%(on+off);
+      if(ph<on){const t1=Math.min(l,t+on-ph),xa=a+(c-a)*t/l,ya=b+(d-b)*t/l,xb=a+(c-a)*t1/l,yb=b+(d-b)*t1/l;if(!(skip&&(skip(xa,ya)||skip(xb,yb))))o.push(gLine(xa,ya,xb,yb,w));t=t1}
+      else t=Math.min(l,t+on+off-ph)}
+    acc+=l}return o}
+/* Mũi tên chỉ hướng trên mặt đường: 's' đi thẳng, 'r' rẽ phải */
+function arrowPolys(x,y,h,kind){const c=Math.cos(h),n=Math.sin(h),T=P=>[x+P[0]*c-P[1]*n,y+P[0]*n+P[1]*c,0],o=[];
+  if(kind==='r')o.push([[-2.4,-.14],[.14,-.14],[.14,.14],[-2.4,.14]].map(T),[[-.14,-.14],[.14,-.14],[.14,1],[-.14,1]].map(T),[[-.55,1],[.55,1],[0,1.9]].map(T));
+  else o.push([[-2.4,-.14],[.4,-.14],[.4,.14],[-2.4,.14]].map(T),[[.4,-.55],[1.4,0],[.4,.55]].map(T));
+  return o}
 function examMarks(){
-  const L=[],line=(a,b,c,d,w)=>L.push(gLine(a,b,c,d,w));
   const white=[];const W=(a,b,c,d,w=.45)=>white.push(gLine(a,b,c,d,w));
-  W(-105,-73,-105,-67);W(-70,-73,-70,-67);W(STOP_LIGHT,-74,STOP_LIGHT,-66);W(HILL_EXAM.stop,-73,HILL_EXAM.stop,-67);W(-123,46,-117,46);W(-123,-48,-117,-48,.8);
-  for(const y of[25,0,-25])W(-123,y,-117,y,.25);
-  for(let i=0;i<6;i++)W(-69+.7,-72.7+i,-64.8,-72.7+i,.5);
-  const rail=[];for(const y of[39.3,40.7])rail.push(gLine(-124,y,-116,y,.14));
-  const ties=[];for(let x=-123.5;x<=-116.5;x+=.9)ties.push(gLine(x,38.6,x,41.4,.25));
-  const chev=[],hd=HILL_EXAM.dir;for(const[a,b,dir]of[[HILL_EXAM.up[0],HILL_EXAM.up[1],hd],[HILL_EXAM.down[0],HILL_EXAM.down[1],-hd]])for(let x=a+1;x<b;x+=3)chev.push(gLine(x-dir,-72.6,x+dir*.5,-70,.28),gLine(x+dir*.5,-70,x-dir,-67.4,.28));
-  const bayOut=[];for(const b of[EX_DOC,EX_NGANG]){bayOut.push(gLine(b.x0,b.y1,b.x0,b.y0,.14),gLine(b.x0,b.y0,b.x1,b.y0,.14),gLine(b.x1,b.y0,b.x1,b.y1,.14))}
+  /* Xuất phát, người đi bộ, dốc */
+  W(-71,36,-71,39.5);W(-58,36,-58,39.5);W(HILL_EXAM.stop,36,HILL_EXAM.stop,39.5);
+  for(let i=0;i<8;i++){const y=32.95+i*.87;W(-57.2,y,-53.4,y,.48)}
+  /* Ngã tư: vạch đi bộ bốn phía và vạch dừng */
+  for(let i=0;i<8;i++){const q=-3.05+i*.87;W(4.3,q,7.6,q,.48);W(-7.6,q,-4.3,q,.48);W(q,-7.6,q,-4.3,.48);W(q,4.3,q,7.6,.48)}
+  W(STOP_LIGHT,-3.5,STOP_LIGHT,0);W(-STOP_LIGHT,0,-STOP_LIGHT,3.5);W(-3.5,-STOP_LIGHT,0,-STOP_LIGHT);W(0,STOP_LIGHT,3.5,STOP_LIGHT);
+  /* Đường sắt, thay đổi số, kết thúc */
+  W(60,-45.5,60,-42);for(const x of[35,10,-15])W(x,-45.5,x,-42,.25);W(40,0,40,3.5,.8);
+  const rail=[];for(const x of[53.565,55])rail.push(gLine(x,-46,x,-38,.14));
+  const ties=[];for(let y=-45.6;y<=-38.4;y+=.9)ties.push(gLine(53.08,y,55.48,y,.25));
+  /* Vạch tim đường đứt quãng, tránh ngã tư, ngã ba và các bài */
+  const nogo=[[0,0,11],[-88,0,10],[88,0,10],[88,-26,8],[0,36,10],[17.5,-14,2]];
+  const skip=(x,y)=>nogo.some(([a,b,r])=>Math.abs(x-a)<r&&Math.abs(y-b)<r)||(x>-60&&x<-4&&y>31&&y<41)||(x>50&&x<58&&y<-35);
+  for(const st of STRIPS)if(st.w===7)white.push(...dashQuads(st.p,.15,3,3,skip));
+  /* Mũi tên */
+  for(const[x,y,h,k]of[[20,-1.75,Math.PI,'r'],[24,1.75,0,'s'],[75,-43.75,Math.PI,'s'],[32,-24.25,0,'s'],[-89.75,-15,Math.PI/2,'s'],[89.75,10,-Math.PI/2,'s'],[50,29.15,0,'s'],[-30,1.75,0,'s'],[1.75,18,-Math.PI/2,'s']])white.push(...arrowPolys(x,y,h,k));
+  /* Vạch giới hạn của hình */
+  for(const p of EX_LINES)white.push(...polyQuads(p,.1,0,0));
+  for(const b of[EX_DOC,EX_NGANG]){const e=.05;white.push(gLine(b.x0-e,b.y0,b.x0-e,b.y1+.1,.1),gLine(b.x0-.1,b.y1+e,b.x1+.1,b.y1+e,.1),gLine(b.x1+e,b.y1+.1,b.x1+e,b.y0,.1))}
+  /* Ô đỗ: nền đường và bó vỉa ba phía, phía mở là phía giáp đường */
+  const bayRoad=[],bayW=[],bayR=[],h=CURB/2,g=.2;
+  for(const b of[EX_DOC,EX_NGANG]){bayRoad.push(gRect(b.x0-g,b.y0-.4,b.x1+g,b.y1+g));
+    for(const p of[[[b.x0-g-h,b.y0],[b.x0-g-h,b.y1+g+CURB]],[[b.x0-g-CURB,b.y1+g+h],[b.x1+g+CURB,b.y1+g+h]],[[b.x1+g+h,b.y1+g+CURB],[b.x1+g+h,b.y0]]]){bayW.push(gLine(p[0][0],p[0][1],p[1][0],p[1][1],CURB));bayR.push(...dashQuads(p,CURB,1,1))}}
+  const chev=[],hd=HILL_EXAM.dir;for(const[a,b,dir]of[[HILL_EXAM.up[0],HILL_EXAM.up[1],hd],[HILL_EXAM.down[0],HILL_EXAM.down[1],-hd]])for(let x=a+1;x<b;x+=3)chev.push(gLine(x-dir,32.9,x+dir*.5,36,.28),gLine(x+dir*.5,36,x-dir,39.1,.28));
   return[
-    ['#00000033',[gRect(HILL_EXAM.up[0],-73,HILL_EXAM.up[1],-67)]],
-    ['#ffffff14',[gRect(HILL_EXAM.down[0],-73,HILL_EXAM.down[1],-67)]],
+    ['#3b4045',bayRoad],['#eceee8',bayW],['#c8423a',bayR],
+    ['#00000033',[gRect(HILL_EXAM.up[0],32.5,HILL_EXAM.up[1],39.5)]],
+    ['#ffffff14',[gRect(HILL_EXAM.down[0],32.5,HILL_EXAM.down[1],39.5)]],
     ['#ffb53d88',chev],
     ['#6b5a44',ties],['#c9ced1',rail],
-    ['#cdb88a',[gRect(6,-69.7,18,-68.7)]],
-    ['#3b4045',[gRect(EX_DOC.x0,EX_DOC.y0,EX_DOC.x1,EX_DOC.y1+.25),gRect(EX_NGANG.x0,EX_NGANG.y0,EX_NGANG.x1,EX_NGANG.y1+.25)]],
-    ['#f4f5f0',white.concat(bayOut)],
+    ['#cdb88a',[gRect(8,38.265,12.3,38.665)]],
+    ['#f4f5f0',white],
   ];
 }
-/* Dốc ngay sau vạch người đi bộ, đi về hướng đông là lên dốc. Vạch dừng nằm trên mặt dốc, cách đỉnh 8 m */
-const HILL_EXAM={yMin:-76,yMax:-64,up:[-54,-34],down:[-24,-8],grade:.1,dir:1,stop:-42};
-let EX_MARKS=null,EX_G3=null;
+/* Dốc 10% ngay sau vạch người đi bộ, đi về hướng đông là lên dốc. Chân dốc ở x = -46, vạch dừng cách chân dốc 6 m */
+const HILL_EXAM={yMin:31,yMax:41,up:[-46,-31],down:[-23,-8],grade:.1,dir:1,stop:-40};
+let EX_MARKS=null,EX_G3=null,EX_BASE=null,EX_P2D=null;
 function polysWithBox(polys){return polys.map(p=>{const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return{p,x:(x0+x1)/2,y:(y0+y1)/2,r:Math.hypot(x1-x0,y1-y0)/2}})}
 function buildExamG3(){
   EX_MARKS=examMarks();
-  const strip=extra=>{const out=[];for(const o of STRIP_SEGS){const[a,b,c,d]=o.seg,l=Math.hypot(c-a,d-b)||1,e=(o.w/2)*.8,ux=(c-a)/l,uy=(d-b)/l;out.push(gLine(a-ux*e,b-uy*e,c+ux*e,d+uy*e,o.w+extra))}return out};
-  EX_G3=[['#eceee8',strip(.3)],['#3b4045',strip(0)],...EX_MARKS].map(([c,p])=>[c,polysWithBox(p)]);
+  const road=[],white=[],red=[];
+  for(const st of STRIPS){const cap=st.cap||[0,0],w=st.w,e0=cap[0]?w/2:0,e1=cap[1]?w/2:0;
+    road.push(...polyQuads(st.p,w,e0,e1));
+    white.push(...polyQuads(st.p,w+CURB*2,e0+CURB,e1+CURB));
+    for(const k of[1,-1])red.push(...dashQuads(offsetLine(st.p,k*(w/2+CURB/2),e0+CURB,e1+CURB),CURB,1,1));
+  }
+  for(const f of FILLETS){const a=filletArc(f,f[4]),c=filletArc(f,f[4]-CURB/2);
+    road.push([[f[0],f[1],0],...a.map(P0)]);
+    white.push(...polyQuads(c,CURB,.1,.1));red.push(...dashQuads(c,CURB,1,1));
+  }
+  EX_BASE={white,red,road};
+  EX_G3=[['#eceee8',white],['#c8423a',red],['#3b4045',road],...EX_MARKS].map(([c,p])=>[c,polysWithBox(p)]);
 }
-const EX_SIGNS=[[-72,-74.5,'2'],[-56,-74.5,'3'],[4,-74,'4'],[100,-75.5,'5'],[126,-44,'6'],[20,76,'7'],[-24,76,'8'],[-125.5,58,'9'],[-125.5,27,'10'],[-125.5,-40,'11']];
-const EX_LABELS=[[-105,-75.5,'XUẤT PHÁT'],[-68,-75.5,'NGƯỜI ĐI BỘ'],[-29,-75.5,'DỐC 10%'],[12,-75,'VỆT BÁNH XE'],[44,-41,'VÒNG VUÔNG GÓC'],[96,-76,'NGÃ TƯ'],[131,-6,'QUANH CO'],[0,57.5,'GHÉP DỌC'],[-44,60.5,'GHÉP NGANG'],[-110,40,'ĐƯỜNG SẮT'],[-109,0,'THAY ĐỔI SỐ'],[-110,-48,'KẾT THÚC']];
+const EX_SIGNS=[[-60,42,'2'],[-48,42,'3'],[5,42,'4'],[12,-5.6,'5'],[5,-11,'6'],[38,-19.5,'7'],[64,-19.5,'8'],[64,-47.6,'9'],[38,-47.6,'10'],[36,5.6,'11']];
+const EX_LABELS=[[-73,44.5,'XUẤT PHÁT'],[-55,44.5,'NGƯỜI ĐI BỘ'],[-31,44.5,'DỐC 10%'],[7,44.5,'VỆT BÁNH XE'],[28,44.5,'VÒNG VUÔNG GÓC'],[24,-7,'NGÃ TƯ'],[8,-24,'QUANH CO'],[45,-14.5,'GHÉP DỌC'],[71,-17.5,'GHÉP NGANG'],[54,-49.5,'ĐƯỜNG SẮT'],[10,-49.5,'THAY ĐỔI SỐ'],[42,8,'KẾT THÚC']];
 function lightColor(){return exam&&exam.light==='red'?'#ff3b2f':'#35d35f'}
 function trafficLight3D(c,k){
   const q=camPt(k,[LIGHT_POS[0],LIGHT_POS[1],0]);if(q[2]<1)return;
@@ -1476,18 +1545,18 @@ function trafficLight3D(c,k){
 }
 function drawExamGround(c){
   c.fillStyle=PAT.grass;c.fillRect(-WALL.x,-WALL.y,WALL.x*2,WALL.y*2);
-  c.lineJoin='round';c.lineCap='butt';
-  const draw=(col,ex)=>{c.strokeStyle=col;for(const st of STRIPS){c.lineWidth=st.w+ex;c.beginPath();st.p.forEach(([a,b],i)=>i?c.lineTo(a,b):c.moveTo(a,b));c.stroke()}};
-  draw('#eceee8',.3);draw(PAT.road,0);
-  for(const[col,polys]of EX_MARKS){c.fillStyle=col;c.beginPath();for(const p of polys){p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.closePath()}c.fill()}
+  /* Mặt sân không đổi: dựng Path2D một lần rồi tô lại mỗi khung hình */
+  if(!EX_P2D){const mk=polys=>{const P=new Path2D();for(const p of polys){p.forEach((q,i)=>i?P.lineTo(q[0],q[1]):P.moveTo(q[0],q[1]));P.closePath()}return P};
+    EX_P2D=[['#eceee8',mk(EX_BASE.white)],['#c8423a',mk(EX_BASE.red)],['road',mk(EX_BASE.road)],...EX_MARKS.map(([col,polys])=>[col==='#3b4045'?'road':col,mk(polys)])]}
+  for(const[col,P]of EX_P2D){c.fillStyle=col==='road'?PAT.road:col;c.fill(P)}
   for(const[x,y,t]of EX_LABELS)paintText(c,t,x,y,.95,'#ffffffd9');
   c.fillStyle='#14181c';c.beginPath();c.arc(LIGHT_POS[0],LIGHT_POS[1],.7,0,7);c.fill();
   c.fillStyle=lightColor();c.beginPath();c.arc(LIGHT_POS[0],LIGHT_POS[1],.5,0,7);c.fill();
   drawScenery(c);
 }
-const EXAM_MAP={WALL:{x:165,y:105},
-  TREES:[[-60,-30,4],[-90,-25,3],[-70,30,3.6],[-30,25,3.4],[50,32,3.5],[90,30,3.4],[80,-42,3.2],[88,-18,3],[-145,-85,4],[150,90,4],[-150,85,3.6],[150,-95,3.6],[70,92,3.5],[-30,92,3.5],[0,-92,3.8],[-95,-90,3]],
-  BLDS:[[30,-25,36,18]],hill:HILL_EXAM};
+const EXAM_MAP={WALL:{x:104,y:64},
+  TREES:[[-95,-56,3.6],[-62,-55,3.4],[40,-55,3.6],[76,-56,3.4],[97,-56,3],[-92,54,3.6],[-48,55,3.4],[-8,55,3.8],[52,54,3.4],[92,54,3.6],[97,-18,3.4],[97,12,3.6],[-97,12,3.6],[-97,-18,3.2]],
+  BLDS:[[-30,-63,44,12]],hill:HILL_EXAM};
 function useMap(m){
   if(m===curMap&&(m!=='exam'||EX_G3))return;
   curMap=m;
@@ -1511,15 +1580,16 @@ function stopResult(d,name){
   else if(d>.5)deduct(5,`${name}: dừng chưa tới vạch, còn cách ${fmtM(d)}`);
   else say(`Dừng đúng: cách vạch ${fmtM(d)}`,'good');
 }
+/* Vùng mũi xe theo từng bài. Làn đi: đường đầu sân (đi về đông) y≈37,75; đường giữa sân y≈∓1,75; đường ghép xe y≈-24,25; đường cuối sân (đi về tây) y≈-43,75 */
 const ST={
- start:{no:1,name:'Xuất phát',pose:{x:-112,y:-70,h:0,engine:true,gear:'N',hb:true},enter:()=>true,exit:frontIn(-98,-60,-74,-66),
-  text:'Thắt dây an toàn, chờ lệnh. Có lệnh thì bật xi nhan trái và xuất phát trong 20 giây. Qua vạch 5 m thì tắt xi nhan.',keys:['belt','bl','clutch','hb'],hl:[],zone:{x:-103,y:-70,w:4,h:6},
+ start:{no:1,name:'Xuất phát',pose:{x:-76,y:37.75,h:0,engine:true,gear:'N',hb:true},enter:()=>true,exit:frontIn(-64,-48,31,43),
+  text:'Thắt dây an toàn, chờ lệnh. Có lệnh thì bật xi nhan trái và xuất phát trong 20 giây. Qua vạch 5 m thì tắt xi nhan.',keys:['belt','bl','clutch','hb'],hl:[],zone:{x:-69,y:37.75,w:4,h:3.5},
   tick(st,dt){
     st.t=(st.t||0)+dt;
     if(st.t<2.5)return;
     if(!st.go){st.go=true;snd.done();say('Có lệnh xuất phát!','good');st.t0=st.t}
     const el=st.t-st.t0,[fx]=frontPt();
-    if(!st.crossed&&fx>=-105){st.crossed=true;
+    if(!st.crossed&&fx>=-71){st.crossed=true;
       if(!s.belt)deduct(5,'Xuất phát: không thắt dây an toàn');
       if(s.blink!==-1)deduct(5,'Xuất phát: không bật xi nhan trái');
     }
@@ -1529,42 +1599,12 @@ const ST={
     }
   },
   done(){if(s.blink===-1)deduct(5,'Xuất phát: không tắt xi nhan trái sau vạch 5 m')}},
- ped:{no:2,name:'Dừng xe nhường đường cho người đi bộ',pose:{x:-100,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-85,-60,-74,-66),exit:frontIn(-64,-50,-74,-66),
-  text:'Dừng sao cho cản trước cách vạch không quá 0,5 m, rồi đi tiếp.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-70.25,y:-70,w:.5,h:6},
-  tick(st,dt){checkStop(st,dt,-70-frontPt()[0],d=>stopResult(d,'Người đi bộ'))},
+ ped:{no:2,name:'Dừng xe nhường đường cho người đi bộ',pose:{x:-74,y:37.75,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-64,-46,31,43),exit:frontIn(-51,-44,31,43),
+  text:'Dừng sao cho cản trước cách vạch không quá 0,5 m, rồi đi tiếp.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-58.25,y:37.75,w:.5,h:3.5},
+  tick(st,dt){checkStop(st,dt,-58-frontPt()[0],d=>stopResult(d,'Người đi bộ'))},
   done(st){if(!st.stopped)deduct(5,'Người đi bộ: không dừng ở vạch')}},
- vet:{no:4,name:'Qua vệt bánh xe và đường vòng vuông góc',pose:{x:-4,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(2,24,-74,-66),exit:frontIn(66,104,-74,-66),lines:true,limit:120,
-  text:'Cho hai bánh bên phải đi trên dải vệt bánh, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:12,y:-69.2,w:12,h:1},
-  tick(st){
-    const[fr,,rr]=examWheels();
-    /* examWheels trả về mép ngoài lốp; chấm theo tim lốp nên lùi vào trong nửa bề rộng lốp */
-    const ty=CAR.tire/2*Math.cos(s.h);
-    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=12){st[flag]=true;if(Math.abs(p[1]-ty+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
-    chk(fr,'fOk','trước');chk(rr,'rOk','sau');
-  }},
- light:{no:5,name:'Qua ngã tư có đèn tín hiệu (rẽ phải)',pose:{x:68,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(85,113,-74,-66),exit:frontIn(114,126,-58,-48),
-  text:'Đèn đỏ thì dừng trước vạch, không quá 0,5 m. Bật xi nhan phải, đèn xanh thì rẽ phải trong 20 giây.',keys:['br','brake','steer'],hl:['blinkR','brake'],zone:{x:105.75,y:-70,w:.5,h:8},
-  onEnter(st){exam.light='red';st.red=6+Math.random()*6;st.t=0},
-  tick(st,dt){
-    st.t+=dt;
-    if(exam.light==='red'&&st.t>=st.red){exam.light='green';st.g=0;snd.tick(990)}
-    if(exam.light==='green')st.g+=dt;
-    const[fx,fy]=frontPt(),d=STOP_LIGHT-fx;
-    if(exam.light==='red'){
-      /* Đã vượt đèn đỏ rồi mới dừng thì chỉ tính lỗi vượt đèn. Dừng xong mà đi tiếp khi đèn còn đỏ vẫn là vượt đèn. */
-      checkStop(st,dt,d,x=>{if(!st.ran)stopResult(x,'Ngã tư');st.fx0=STOP_LIGHT-x});
-      if(!st.ran&&fx>(st.stopped?Math.max(STOP_LIGHT,st.fx0):STOP_LIGHT)+.5){st.ran=true;deduct(10,'Ngã tư: vượt đèn đỏ')}
-    }
-    if(fx>=STOP_LIGHT&&s.blink===1)st.sig=true;
-    if(st.g>20&&!st.l20){st.l20=true;deduct(5,'Ngã tư: quá 20 giây từ khi đèn xanh chưa qua được')}
-    if(st.g>30)dq('Ngã tư: quá 30 giây từ khi đèn xanh chưa qua được');
-    if(fx>131||fy<-82)dq('Ngã tư: đi sai hướng của bài thi');
-  },
-  done(st){if(!st.sig)deduct(5,'Ngã tư: không bật xi nhan phải');exam.light='green'}},
- curve:{no:6,name:'Qua đường vòng quanh co',pose:{x:120,y:-60,h:HS,engine:true,gear:'N',hb:false},enter:frontIn(110,130,-44,-30),exit:frontIn(110,130,31,60),lines:true,limit:120,
-  text:'Đi trong vùng giới hạn, không đè vạch, hoàn thành trong 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:120,y:33,w:6,h:3}},
- hill:{no:3,name:'Dừng và khởi hành xe trên dốc',pose:{x:-80,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-63,-30,-76,-64),exit:frontIn(-8,10,-76,-64),
-  text:'Dừng cách vạch không quá 0,5 m. Khởi hành trong 30 giây, không tụt quá 0,5 m. Dùng nửa côn, ga và phanh tay.',keys:['brake','hb','bite','gas'],hl:['brake','hb'],zone:{x:-42.25,y:-70,w:.5,h:6},
+ hill:{no:3,name:'Dừng và khởi hành xe trên dốc',pose:{x:-62,y:37.75,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-50,-25,31,43),exit:frontIn(-8,2,31,43),
+  text:'Dừng cách vạch không quá 0,5 m. Khởi hành trong 30 giây, không tụt quá 0,5 m. Dùng nửa côn, ga và phanh tay.',keys:['brake','hb','bite','gas'],hl:['brake','hb'],zone:{x:HILL_EXAM.stop-.25,y:37.75,w:.5,h:3.5},
   tick(st,dt){
     const d=HILL_EXAM.stop-frontPt()[0];
     if(!st.stopped&&d<-1)dq('Dốc: không dừng ở vạch');
@@ -1579,21 +1619,52 @@ const ST={
       if(!st.passed){st.w+=dt;if(d<-.05)st.passed=true;if(!st.passed&&st.w>30)dq('Dốc: quá 30 giây chưa khởi hành qua vạch')}
     }
   }},
- doc:{no:7,name:'Ghép xe dọc vào nơi đỗ',pose:{x:26,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-20,20,64,76),exit:frontIn(-40,-16,62,76),lines:true,limit:120,
-  text:'Tiến qua nơi đỗ, lùi đuôi xe vào khung bên phải. Cả thân xe nằm trong vạch và dừng lại thì có tín hiệu, rồi tiến ra đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:0,y:63.2,w:2.8,h:5.6},
-  tick(st,dt){checkPark(st,dt,EX_DOC,()=>Math.sin(s.h)>.85)},done(st){if(!st.parked)dq('Ghép dọc: chưa ghép được xe vào nơi đỗ')}},
- ngang:{no:8,name:'Ghép xe ngang vào nơi đỗ',pose:{x:-14,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(-58,-22,62,76),exit:frontIn(-90,-62,64,76),lines:true,limit:120,
-  text:'Tiến qua nơi đỗ, lùi chếch vào khung bên phải rồi trả lái để xe nằm song song với lề. Dừng có tín hiệu rồi đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:-44.75,y:64.6,w:8.5,h:2.8},
-  tick(st,dt){checkPark(st,dt,EX_NGANG,()=>Math.cos(s.h)<-.9)},done(st){if(!st.parked)dq('Ghép ngang: chưa ghép được xe vào nơi đỗ')}},
- rail:{no:9,name:'Tạm dừng ở chỗ có đường sắt chạy qua',pose:{x:-120,y:62,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-126,-114,48,56),exit:frontIn(-126,-114,28,36),
-  text:'Dừng cách vạch không quá 0,5 m, rồi đi qua đường sắt.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-120,y:46.25,w:6,h:.5},
-  tick(st,dt){checkStop(st,dt,frontPt()[1]-46,d=>stopResult(d,'Đường sắt'))},
+ vet:{no:4,name:'Qua vệt bánh xe và đường vòng vuông góc',pose:{x:-4,y:37.75,h:0,engine:true,gear:'N',hb:false},enter:frontIn(4,14,31,43),exit:frontIn(33,60,24,34),lines:true,limit:120,
+  text:'Cho hai bánh bên phải đi trên vệt bánh xe, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:10.15,y:38.465,w:4.3,h:.4},
+  tick(st){
+    const[fr,,rr]=examWheels();
+    /* examWheels trả về mép ngoài lốp; chấm theo tim lốp nên lùi vào trong nửa bề rộng lốp */
+    const ty=CAR.tire/2*Math.cos(s.h);
+    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=10.15){st[flag]=true;if(Math.abs(p[1]-ty-38.465)>.3)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
+    chk(fr,'fOk','trước');chk(rr,'rOk','sau');
+  }},
+ light:{no:5,name:'Qua ngã tư có đèn tín hiệu (rẽ phải)',pose:{x:40,y:-1.75,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(2,30,-4,1),exit:frontIn(-1,5,-13,-8),
+  text:'Đèn đỏ thì dừng trước vạch, không quá 0,5 m. Bật xi nhan phải, đèn xanh thì rẽ phải trong 20 giây.',keys:['br','brake','steer'],hl:['blinkR','brake'],zone:{x:STOP_LIGHT+.25,y:-1.75,w:.5,h:3.5},
+  onEnter(st){exam.light='red';st.red=6+Math.random()*6;st.t=0},
+  tick(st,dt){
+    st.t+=dt;
+    if(exam.light==='red'&&st.t>=st.red){exam.light='green';st.g=0;snd.tick(990)}
+    if(exam.light==='green')st.g+=dt;
+    /* Xe đi về hướng tây: khoảng cách tới vạch là toạ độ mũi xe trừ toạ độ vạch */
+    const[fx,fy]=frontPt(),d=fx-STOP_LIGHT;
+    if(exam.light==='red'){
+      /* Đã vượt đèn đỏ rồi mới dừng thì chỉ tính lỗi vượt đèn. Dừng xong mà đi tiếp khi đèn còn đỏ vẫn là vượt đèn. */
+      checkStop(st,dt,d,x=>{if(!st.ran)stopResult(x,'Ngã tư');st.fx0=STOP_LIGHT+x});
+      if(!st.ran&&fx<(st.stopped?Math.min(STOP_LIGHT,st.fx0):STOP_LIGHT)-.5){st.ran=true;deduct(10,'Ngã tư: vượt đèn đỏ')}
+    }
+    if(fx<=STOP_LIGHT&&s.blink===1)st.sig=true;
+    if(st.g>20&&!st.l20){st.l20=true;deduct(5,'Ngã tư: quá 20 giây từ khi đèn xanh chưa qua được')}
+    if(st.g>30)dq('Ngã tư: quá 30 giây từ khi đèn xanh chưa qua được');
+    if(fx<-6||fy>6)dq('Ngã tư: đi sai hướng của bài thi');
+  },
+  done(st){if(!st.sig)deduct(5,'Ngã tư: không bật xi nhan phải');exam.light='green'}},
+ curve:{no:6,name:'Qua đường vòng quanh co',pose:{x:1.75,y:-2,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-1,5,-16,-11),exit:frontIn(16,26,-24,-17),lines:true,limit:120,
+  text:'Đi trong vùng giới hạn, không đè vạch, hoàn thành trong 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:19.25,y:-17,w:3.85,h:2}},
+ doc:{no:7,name:'Ghép xe dọc vào nơi đỗ',pose:{x:24,y:-24.25,h:0,engine:true,gear:'N',hb:false},enter:frontIn(25,60,-30,-16),exit:frontIn(61,70,-30,-22),lines:true,limit:120,
+  text:'Tiến qua nơi đỗ, lùi đuôi xe vào khung bên phải. Cả thân xe nằm trong vạch và dừng lại thì có tín hiệu, rồi tiến ra đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:45,y:-19.85,w:2.35,h:5.3},
+  tick(st,dt){checkPark(st,dt,EX_DOC,()=>Math.sin(s.h)<-.85)},done(st){if(!st.parked)dq('Ghép dọc: chưa ghép được xe vào nơi đỗ')}},
+ ngang:{no:8,name:'Ghép xe ngang vào nơi đỗ',pose:{x:55,y:-24.25,h:0,engine:true,gear:'N',hb:false},enter:frontIn(62,95,-30,-16),exit:frontIn(86,94,-40,-31),lines:true,limit:120,
+  text:'Tiến qua nơi đỗ, lùi chếch vào khung bên phải rồi trả lái để xe nằm song song với lề. Dừng có tín hiệu rồi đi tiếp.',keys:['steer','bite','brake'],hl:['wheel','clutch'],zone:{x:71.225,y:-21.405,w:6.45,h:2.19},
+  tick(st,dt){checkPark(st,dt,EX_NGANG,()=>Math.cos(s.h)>.9)},done(st){if(!st.parked)dq('Ghép ngang: chưa ghép được xe vào nơi đỗ')}},
+ rail:{no:9,name:'Tạm dừng ở chỗ có đường sắt chạy qua',pose:{x:76,y:-43.75,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(61,80,-48,-38),exit:frontIn(42,50,-48,-38),
+  text:'Dừng cách vạch không quá 0,5 m, rồi đi qua đường sắt.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:60.25,y:-43.75,w:.5,h:3.5},
+  tick(st,dt){checkStop(st,dt,frontPt()[0]-60,d=>stopResult(d,'Đường sắt'))},
   done(st){if(!st.stopped)deduct(5,'Đường sắt: không dừng ở vạch')}},
- gear:{no:10,name:'Thay đổi số trên đường bằng',pose:{x:-120,y:34,h:HN,engine:true,gear:'N',hb:false},enter:frontIn(-126,-114,-25,25),exit:frontIn(-126,-114,-48,-25),noSpeed:true,limit:120,
-  text:'Vào bài ở số 1. Trong 25 m đầu lên số 2 và vượt 24 km/h. Trong 25 m sau về số 1 và xuống từ 24 km/h trở xuống.',keys:['clutch','gas','brake'],hl:['shifter','clutch'],zone:{x:-120,y:12.5,w:6,h:25},
+ gear:{no:10,name:'Thay đổi số trên đường bằng',pose:{x:50,y:-43.75,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(10,35,-48,-38),exit:frontIn(-40,-15,-48,-38),noSpeed:true,limit:120,
+  text:'Vào bài ở số 1. Trong 25 m đầu lên số 2 và vượt 24 km/h. Trong 25 m sau về số 1 và xuống từ 24 km/h trở xuống.',keys:['clutch','gas','brake'],hl:['shifter','clutch'],zone:{x:22.5,y:-43.75,w:25,h:3.5},
   onEnter(st){st.g1=s.gear==='1';if(!st.g1)say('Vào bài này phải đang ở số 1.','warn')},
   tick(st){
-    if(!st.mid&&frontPt()[1]<=0){st.mid=true;lesson.zone={x:-120,y:-12.5,w:6,h:25};
+    if(!st.mid&&frontPt()[0]<=10){st.mid=true;lesson.zone={x:-2.5,y:-43.75,w:25,h:3.5};
       const g=st.g1&&s.gear==='2',v=kmh(s)>SPEED_MAX;
       if(!g&&!v)deduct(5,'Thay đổi số: 25 m đầu sai cả số và tốc độ');
       else if(!g)deduct(5,'Thay đổi số: 25 m đầu chưa đúng số');
@@ -1606,10 +1677,10 @@ const ST={
     else if(!g)deduct(5,'Thay đổi số: 25 m sau chưa về số 1');
     else if(!v)deduct(5,'Thay đổi số: 25 m sau chưa giảm tốc');
   }},
- finish:{no:11,name:'Kết thúc',pose:{x:-120,y:-30,h:HN,engine:true,gear:'N',hb:false},enter:()=>true,exit:frontIn(-126,-114,-70,-48),
-  text:'Bật xi nhan phải rồi đi qua vạch kết thúc.',keys:['br'],hl:['blinkR'],zone:{x:-120,y:-48,w:6,h:1},
+ finish:{no:11,name:'Kết thúc',pose:{x:-20,y:1.75,h:0,engine:true,gear:'N',hb:false},enter:frontIn(10,38,-1,4),exit:frontIn(40,60,-1,4),
+  text:'Bật xi nhan phải rồi đi qua vạch kết thúc.',keys:['br'],hl:['blinkR'],zone:{x:40,y:1.75,w:1,h:3.5},
   done(){if(s.blink!==1)deduct(5,'Kết thúc: không bật xi nhan phải khi qua vạch')}},
- danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:70,y:-70,h:0,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
+ danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:60,y:-1.75,h:HW,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
   text:'Chạy trên 8 km/h, còi sẽ báo bất ngờ. Phanh dừng trong 3 giây, bật đèn khẩn cấp trong 5 giây. Có tín hiệu đi tiếp thì tắt đèn rồi mới đi.',keys:['clutch','gas','brake','haz'],hl:[],
   tick(st,dt){st.t=(st.t||0)+dt;if(!exam.d&&kmh(s)>8&&st.t>2)startDanger()}},
 };
@@ -1629,7 +1700,7 @@ const EXAM_FULL={id:'exam',name:'Thi thử sa hình đủ bài',sub:'11 bài và
 const EXAM_SINGLES=['start','ped','hill','vet','light','curve','doc','ngang','rail','gear','finish','danger'].map(stationLesson);
 function startExam(l){
   exam={l,ids:l.ids,i:0,active:false,st:{},score:100,log:[],t:0,sT:0,over:false,reason:'',pass:false,full:!!l.full,light:'green',speedT:0,timeT:0,rpmHigh:false,lineOn:false,lineT:0,d:null,dI:0,hudT:0};
-  if(l.full){const g=[3,4,6,8];exam.dI=g[Math.floor(Math.random()*g.length)]}
+  if(l.full){const g=[4,8,10];exam.dI=g[Math.floor(Math.random()*g.length)]}
   lesson.zone=null;
   renderExam();
 }
@@ -1702,7 +1773,7 @@ function tickExam(dt){
   if(exam.d&&!exam.d.done){tickDanger(dt);if(exam.over)return;if(exam.full)return}
   if(exam.full&&!exam.d&&!exam.active&&exam.i===exam.dI&&kmh(s)>5){exam.dW=(exam.dW||0)+dt;if(exam.dW>1.2){startDanger();return}}
   /* Đi quá chậm qua đoạn chuyển bài nên còi chưa kịp báo: dời tình huống sang đoạn chuyển bài kế tiếp */
-  if(exam.full&&!exam.d&&exam.i>exam.dI){const n=[4,6,8].find(v=>exam.active?v>exam.i:v>=exam.i);if(n){exam.dI=n;exam.dW=0}}
+  if(exam.full&&!exam.d&&exam.i>exam.dI){const n=[8,10].find(v=>exam.active?v>exam.i:v>=exam.i);if(n){exam.dI=n;exam.dW=0}}
   /* Tiến trình bài */
   if(!exam.active){
     lesson.zone=cur.zone||null;
