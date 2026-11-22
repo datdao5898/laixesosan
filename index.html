@@ -445,9 +445,9 @@ function lerpTable(t,x){if(x<=t[0][0])return t[0][1];for(let i=1;i<t.length;i++)
 const TORQUE=[[400,90],[1000,115],[2000,125],[4000,132],[5500,120],[6500,80]];
 /* Độ ăn côn: bàn đạp từ .75 (bắt đầu bám) đến .3 (ăn hoàn toàn) */
 function clutchEngage(p){const t=clamp((.75-p)/.45,0,1);return t*t*(3-2*t)}
-/* Mặt dốc trên đoạn đường phía bắc: đi về hướng tây là lên dốc */
-const HILL={yMin:-66,yMax:-54,up:[48,70],down:[16,38],grade:.1};
-function slopeX(x,y){if(y<HILL.yMin||y>HILL.yMax)return 0;if(x>=HILL.up[0]&&x<=HILL.up[1])return -HILL.grade;if(x>=HILL.down[0]&&x<=HILL.down[1])return HILL.grade;return 0}
+/* Mặt dốc chạy theo trục x. dir là hướng đi lên dốc: -1 là đi về hướng tây (sân tập), 1 là đi về hướng đông (sân thi) */
+const HILL={yMin:-66,yMax:-54,up:[48,70],down:[16,38],grade:.1,dir:-1};
+function slopeX(x,y){if(y<HILL.yMin||y>HILL.yMax)return 0;if(x>=HILL.up[0]&&x<=HILL.up[1])return HILL.grade*HILL.dir;if(x>=HILL.down[0]&&x<=HILL.down[1])return -HILL.grade*HILL.dir;return 0}
 function newCar(){return{x:0,y:0,h:0,v:0,we:0,engine:false,crank:0,gear:'N',clutch:0,gas:0,brake:0,hb:true,steer:0,blink:0,blinkTurn:0,tc:0,offroad:false,belt:false,hazard:false,ev:[]}}
 function newInput(){return{gasKey:false,brakeKey:false,clutchKey:false,biteKey:false,left:false,right:false,gasPtr:null,brakePtr:null,clutchPtr:null,wheelPtr:false}}
 function approach(v,t,r,dt){return v<t?Math.min(t,v+r*dt):Math.max(t,v-r*dt)}
@@ -1056,7 +1056,7 @@ function drawMini(t){
   c.strokeStyle='#7d8a96';c.lineWidth=RW;c.lineJoin='round';
   if(curMap==='exam'){
     for(const st of STRIPS){c.lineWidth=st.w;c.beginPath();st.p.forEach(([a,b],i)=>i?c.lineTo(a,b):c.moveTo(a,b));c.stroke()}
-    c.fillStyle='#ffb53d55';c.fillRect(HILL.down[0],HILL.yMin,HILL.up[1]-HILL.down[0],HILL.yMax-HILL.yMin);
+    {const a=Math.min(HILL.up[0],HILL.down[0]),b=Math.max(HILL.up[1],HILL.down[1]);c.fillStyle='#ffb53d55';c.fillRect(a,HILL.yMin,b-a,HILL.yMax-HILL.yMin)}
     c.fillStyle='#fff';for(const b of[EX_DOC,EX_NGANG])c.fillRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0);
   }else{
   c.beginPath();c.rect(-100,-60,200,120);c.moveTo(-100,0);c.lineTo(100,0);c.moveTo(0,-60);c.lineTo(0,60);c.stroke();
@@ -1405,15 +1405,15 @@ function drawCabin(t){
 /* ---------- Thi sa hình hạng B ---------- */
 /* Điểm trừ theo Thông tư 05/2024/TT-BGTVT (18 phút, 100 điểm, đạt từ 80). Danh mục bài có đối chiếu Thông tư 12/2025/TT-BCA.
    Kích thước sân là mô phỏng gần đúng, không phải số đo của trung tâm sát hạch. */
-const EXAM_NOTE='Điểm trừ theo Thông tư 05/2024/TT-BGTVT, danh mục và số thứ tự bài theo Thông tư 12/2025/TT-BCA. Từ bài 2 đến bài 10 đi theo bố trí của sân, nên trên sân này bài dốc (bài 3) nằm sau bài quanh co. Kích thước sân là mô phỏng gần đúng. Đây là công cụ ôn tập, không thay thế quy định và sân thi thật.';
+const EXAM_NOTE='Điểm trừ theo Thông tư 05/2024/TT-BGTVT, danh mục và số thứ tự bài theo Thông tư 12/2025/TT-BCA. Sân này bố trí theo kiểu thường gặp ở các trung tâm sát hạch, đi lần lượt từ bài 1 đến bài 11. Kích thước sân là mô phỏng gần đúng. Đây là công cụ ôn tập, không thay thế quy định và sân thi thật.';
 const SPEED_MAX=24,RPM_MAX=4000,TOTAL_LIMIT=18*60,HW=Math.PI,HS=Math.PI/2,HN=-Math.PI/2;
 const EX_DOC={x0:-1.4,x1:1.4,y0:60.4,y1:66},EX_NGANG={x0:-49,x1:-40.5,y0:63.2,y1:66};
 const LIGHT_POS=[108.5,-64.5],STOP_LIGHT=106;
 const sCurvePts=(()=>{const p=[];for(let y=-42;y<=30;y+=3)p.push([120+5*Math.sin(2*Math.PI*(y+42)/36),y]);return p})();
 const STRIPS=[
-  {w:6,p:[[-118,-70],[-20,-70]]},
-  {w:6.2,p:[[-20,-70],[-14,-70],[-14,-48],[14,-48],[14,-70],[20,-70]]},
-  {w:6,p:[[20,-70],[113,-70]]},
+  {w:6,p:[[-118,-70],[24,-70]]},
+  {w:6.2,p:[[24,-70],[30,-70],[30,-48],[58,-48],[58,-70],[64,-70]]},
+  {w:6,p:[[64,-70],[113,-70]]},
   {w:8,p:[[100,-70],[150,-70]]},
   {w:8,p:[[120,-96],[120,-50]]},
   {w:6,p:[[120,-50],[120,-42]]},
@@ -1438,24 +1438,25 @@ function examOutside(x,y){
 function examMarks(){
   const L=[],line=(a,b,c,d,w)=>L.push(gLine(a,b,c,d,w));
   const white=[];const W=(a,b,c,d,w=.45)=>white.push(gLine(a,b,c,d,w));
-  W(-105,-73,-105,-67);W(-70,-73,-70,-67);W(STOP_LIGHT,-74,STOP_LIGHT,-66);W(72,67,72,73);W(-123,46,-117,46);W(-123,-48,-117,-48,.8);
+  W(-105,-73,-105,-67);W(-70,-73,-70,-67);W(STOP_LIGHT,-74,STOP_LIGHT,-66);W(HILL_EXAM.stop,-73,HILL_EXAM.stop,-67);W(-123,46,-117,46);W(-123,-48,-117,-48,.8);
   for(const y of[25,0,-25])W(-123,y,-117,y,.25);
   for(let i=0;i<6;i++)W(-69+.7,-72.7+i,-64.8,-72.7+i,.5);
   const rail=[];for(const y of[39.3,40.7])rail.push(gLine(-124,y,-116,y,.14));
   const ties=[];for(let x=-123.5;x<=-116.5;x+=.9)ties.push(gLine(x,38.6,x,41.4,.25));
-  const chev=[];for(const[a,b,dir]of[[HILL_EXAM.up[0],HILL_EXAM.up[1],-1],[HILL_EXAM.down[0],HILL_EXAM.down[1],1]])for(let x=a+1;x<b;x+=3)chev.push(gLine(x-dir,67.4,x+dir*.5,70,.28),gLine(x+dir*.5,70,x-dir,72.6,.28));
+  const chev=[],hd=HILL_EXAM.dir;for(const[a,b,dir]of[[HILL_EXAM.up[0],HILL_EXAM.up[1],hd],[HILL_EXAM.down[0],HILL_EXAM.down[1],-hd]])for(let x=a+1;x<b;x+=3)chev.push(gLine(x-dir,-72.6,x+dir*.5,-70,.28),gLine(x+dir*.5,-70,x-dir,-67.4,.28));
   const bayOut=[];for(const b of[EX_DOC,EX_NGANG]){bayOut.push(gLine(b.x0,b.y1,b.x0,b.y0,.14),gLine(b.x0,b.y0,b.x1,b.y0,.14),gLine(b.x1,b.y0,b.x1,b.y1,.14))}
   return[
-    ['#00000033',[gRect(HILL_EXAM.up[0],67,HILL_EXAM.up[1],73)]],
-    ['#ffffff14',[gRect(HILL_EXAM.down[0],67,HILL_EXAM.down[1],73)]],
+    ['#00000033',[gRect(HILL_EXAM.up[0],-73,HILL_EXAM.up[1],-67)]],
+    ['#ffffff14',[gRect(HILL_EXAM.down[0],-73,HILL_EXAM.down[1],-67)]],
     ['#ffb53d88',chev],
     ['#6b5a44',ties],['#c9ced1',rail],
-    ['#cdb88a',[gRect(-38,-69.7,-26,-68.7)]],
+    ['#cdb88a',[gRect(6,-69.7,18,-68.7)]],
     ['#3b4045',[gRect(EX_DOC.x0,EX_DOC.y0,EX_DOC.x1,EX_DOC.y1+.25),gRect(EX_NGANG.x0,EX_NGANG.y0,EX_NGANG.x1,EX_NGANG.y1+.25)]],
     ['#f4f5f0',white.concat(bayOut)],
   ];
 }
-const HILL_EXAM={yMin:64,yMax:76,up:[64,88],down:[30,50],grade:.1};
+/* Dốc ngay sau vạch người đi bộ, đi về hướng đông là lên dốc. Vạch dừng nằm trên mặt dốc, cách đỉnh 8 m */
+const HILL_EXAM={yMin:-76,yMax:-64,up:[-54,-34],down:[-24,-8],grade:.1,dir:1,stop:-42};
 let EX_MARKS=null,EX_G3=null;
 function polysWithBox(polys){return polys.map(p=>{const xs=p.map(q=>q[0]),ys=p.map(q=>q[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return{p,x:(x0+x1)/2,y:(y0+y1)/2,r:Math.hypot(x1-x0,y1-y0)/2}})}
 function buildExamG3(){
@@ -1463,8 +1464,8 @@ function buildExamG3(){
   const strip=extra=>{const out=[];for(const o of STRIP_SEGS){const[a,b,c,d]=o.seg,l=Math.hypot(c-a,d-b)||1,e=(o.w/2)*.8,ux=(c-a)/l,uy=(d-b)/l;out.push(gLine(a-ux*e,b-uy*e,c+ux*e,d+uy*e,o.w+extra))}return out};
   EX_G3=[['#eceee8',strip(.3)],['#3b4045',strip(0)],...EX_MARKS].map(([c,p])=>[c,polysWithBox(p)]);
 }
-const EX_SIGNS=[[-72,-74.5,'2'],[-40,-74,'4'],[100,-75.5,'5'],[126,-44,'6'],[92,76.5,'3'],[20,76,'7'],[-24,76,'8'],[-125.5,58,'9'],[-125.5,27,'10'],[-125.5,-40,'11']];
-const EX_LABELS=[[-105,-75.5,'XUẤT PHÁT'],[-68,-75.5,'NGƯỜI ĐI BỘ'],[-32,-75,'VỆT BÁNH XE'],[0,-41,'VÒNG VUÔNG GÓC'],[96,-76,'NGÃ TƯ'],[131,-6,'QUANH CO'],[72,78,'DỐC 10%'],[0,57.5,'GHÉP DỌC'],[-44,60.5,'GHÉP NGANG'],[-110,40,'ĐƯỜNG SẮT'],[-109,0,'THAY ĐỔI SỐ'],[-110,-48,'KẾT THÚC']];
+const EX_SIGNS=[[-72,-74.5,'2'],[-56,-74.5,'3'],[4,-74,'4'],[100,-75.5,'5'],[126,-44,'6'],[20,76,'7'],[-24,76,'8'],[-125.5,58,'9'],[-125.5,27,'10'],[-125.5,-40,'11']];
+const EX_LABELS=[[-105,-75.5,'XUẤT PHÁT'],[-68,-75.5,'NGƯỜI ĐI BỘ'],[-29,-75.5,'DỐC 10%'],[12,-75,'VỆT BÁNH XE'],[44,-41,'VÒNG VUÔNG GÓC'],[96,-76,'NGÃ TƯ'],[131,-6,'QUANH CO'],[0,57.5,'GHÉP DỌC'],[-44,60.5,'GHÉP NGANG'],[-110,40,'ĐƯỜNG SẮT'],[-109,0,'THAY ĐỔI SỐ'],[-110,-48,'KẾT THÚC']];
 function lightColor(){return exam&&exam.light==='red'?'#ff3b2f':'#35d35f'}
 function trafficLight3D(c,k){
   const q=camPt(k,[LIGHT_POS[0],LIGHT_POS[1],0]);if(q[2]<1)return;
@@ -1528,17 +1529,17 @@ const ST={
     }
   },
   done(){if(s.blink===-1)deduct(5,'Xuất phát: không tắt xi nhan trái sau vạch 5 m')}},
- ped:{no:2,name:'Dừng xe nhường đường cho người đi bộ',pose:{x:-100,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-85,-60,-74,-66),exit:frontIn(-63,-40,-74,-66),
+ ped:{no:2,name:'Dừng xe nhường đường cho người đi bộ',pose:{x:-100,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-85,-60,-74,-66),exit:frontIn(-64,-50,-74,-66),
   text:'Dừng sao cho cản trước cách vạch không quá 0,5 m, rồi đi tiếp.',keys:['brake','clutch'],hl:['brake','clutch'],zone:{x:-70.25,y:-70,w:.5,h:6},
   tick(st,dt){checkStop(st,dt,-70-frontPt()[0],d=>stopResult(d,'Người đi bộ'))},
   done(st){if(!st.stopped)deduct(5,'Người đi bộ: không dừng ở vạch')}},
- vet:{no:4,name:'Qua vệt bánh xe và đường vòng vuông góc',pose:{x:-60,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-42,-20,-74,-66),exit:frontIn(22,60,-74,-66),lines:true,limit:120,
-  text:'Cho hai bánh bên phải đi trên dải vệt bánh, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:-32,y:-69.2,w:12,h:1},
+ vet:{no:4,name:'Qua vệt bánh xe và đường vòng vuông góc',pose:{x:-4,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(2,24,-74,-66),exit:frontIn(66,104,-74,-66),lines:true,limit:120,
+  text:'Cho hai bánh bên phải đi trên dải vệt bánh, rồi qua đường vòng vuông góc mà không đè vạch. Không quá 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:12,y:-69.2,w:12,h:1},
   tick(st){
     const[fr,,rr]=examWheels();
     /* examWheels trả về mép ngoài lốp; chấm theo tim lốp nên lùi vào trong nửa bề rộng lốp */
     const ty=CAR.tire/2*Math.cos(s.h);
-    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=-32){st[flag]=true;if(Math.abs(p[1]-ty+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
+    const chk=(p,flag,n)=>{if(!st[flag]&&p[0]>=12){st[flag]=true;if(Math.abs(p[1]-ty+69.2)>.5)dq(`Vệt bánh xe: bánh ${n} bên phải không đi qua vệt`)}};
     chk(fr,'fOk','trước');chk(rr,'rOk','sau');
   }},
  light:{no:5,name:'Qua ngã tư có đèn tín hiệu (rẽ phải)',pose:{x:68,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(85,113,-74,-66),exit:frontIn(114,126,-58,-48),
@@ -1562,10 +1563,10 @@ const ST={
   done(st){if(!st.sig)deduct(5,'Ngã tư: không bật xi nhan phải');exam.light='green'}},
  curve:{no:6,name:'Qua đường vòng quanh co',pose:{x:120,y:-60,h:HS,engine:true,gear:'N',hb:false},enter:frontIn(110,130,-44,-30),exit:frontIn(110,130,31,60),lines:true,limit:120,
   text:'Đi trong vùng giới hạn, không đè vạch, hoàn thành trong 2 phút.',keys:['steer','bite','brake'],hl:['wheel'],zone:{x:120,y:33,w:6,h:3}},
- hill:{no:3,name:'Dừng và khởi hành xe trên dốc',pose:{x:110,y:70,h:HW,engine:true,gear:'N',hb:false},enter:frontIn(60,94,64,76),exit:frontIn(30,56,64,76),
-  text:'Dừng cách vạch không quá 0,5 m. Khởi hành trong 30 giây, không tụt quá 0,5 m. Dùng nửa côn, ga và phanh tay.',keys:['brake','hb','bite','gas'],hl:['brake','hb'],zone:{x:72.25,y:70,w:.5,h:6},
+ hill:{no:3,name:'Dừng và khởi hành xe trên dốc',pose:{x:-80,y:-70,h:0,engine:true,gear:'N',hb:false},enter:frontIn(-63,-30,-76,-64),exit:frontIn(-8,10,-76,-64),
+  text:'Dừng cách vạch không quá 0,5 m. Khởi hành trong 30 giây, không tụt quá 0,5 m. Dùng nửa côn, ga và phanh tay.',keys:['brake','hb','bite','gas'],hl:['brake','hb'],zone:{x:-42.25,y:-70,w:.5,h:6},
   tick(st,dt){
-    const d=frontPt()[0]-72;
+    const d=HILL_EXAM.stop-frontPt()[0];
     if(!st.stopped&&d<-1)dq('Dốc: không dừng ở vạch');
     checkStop(st,dt,d,x=>{
       if(x<0)dq(`Dốc: dừng quá vạch ${fmtM(x)}`);
@@ -1574,7 +1575,7 @@ const ST={
       st.x0=s.x;st.w=0;
     });
     if(st.stopped&&!exam.over){
-      if(s.x-st.x0>.5)dq('Dốc: xe tụt dốc quá 0,5 m');
+      if((st.x0-s.x)*HILL_EXAM.dir>.5)dq('Dốc: xe tụt dốc quá 0,5 m');
       if(!st.passed){st.w+=dt;if(d<-.05)st.passed=true;if(!st.passed&&st.w>30)dq('Dốc: quá 30 giây chưa khởi hành qua vạch')}
     }
   }},
@@ -1608,7 +1609,7 @@ const ST={
  finish:{no:11,name:'Kết thúc',pose:{x:-120,y:-30,h:HN,engine:true,gear:'N',hb:false},enter:()=>true,exit:frontIn(-126,-114,-70,-48),
   text:'Bật xi nhan phải rồi đi qua vạch kết thúc.',keys:['br'],hl:['blinkR'],zone:{x:-120,y:-48,w:6,h:1},
   done(){if(s.blink!==1)deduct(5,'Kết thúc: không bật xi nhan phải khi qua vạch')}},
- danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:30,y:-70,h:0,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
+ danger:{no:0,name:'Thao tác khi gặp tình huống nguy hiểm',pose:{x:70,y:-70,h:0,engine:true,gear:'N',hb:false},enter:()=>true,exit:()=>exam.d&&exam.d.done,
   text:'Chạy trên 8 km/h, còi sẽ báo bất ngờ. Phanh dừng trong 3 giây, bật đèn khẩn cấp trong 5 giây. Có tín hiệu đi tiếp thì tắt đèn rồi mới đi.',keys:['clutch','gas','brake','haz'],hl:[],
   tick(st,dt){st.t=(st.t||0)+dt;if(!exam.d&&kmh(s)>8&&st.t>2)startDanger()}},
 };
@@ -1624,11 +1625,11 @@ function checkPark(st,dt,b,headingOk){
   }else st.p=0;
 }
 const stationLesson=k=>({id:'exam-'+k,name:ST[k].name,sub:(ST[k].lines?'Có vạch giới hạn, ':'')+'chấm điểm như thi thật',exam:true,ids:[k],pose:ST[k].pose,steps:[]});
-const EXAM_FULL={id:'exam',name:'Thi thử sa hình đủ bài',sub:'11 bài và tình huống nguy hiểm, 18 phút, 100 điểm, đạt từ 80',exam:true,full:true,ids:['start','ped','vet','light','curve','hill','doc','ngang','rail','gear','finish'],pose:ST.start.pose,steps:[]};
+const EXAM_FULL={id:'exam',name:'Thi thử sa hình đủ bài',sub:'11 bài và tình huống nguy hiểm, 18 phút, 100 điểm, đạt từ 80',exam:true,full:true,ids:['start','ped','hill','vet','light','curve','doc','ngang','rail','gear','finish'],pose:ST.start.pose,steps:[]};
 const EXAM_SINGLES=['start','ped','hill','vet','light','curve','doc','ngang','rail','gear','finish','danger'].map(stationLesson);
 function startExam(l){
   exam={l,ids:l.ids,i:0,active:false,st:{},score:100,log:[],t:0,sT:0,over:false,reason:'',pass:false,full:!!l.full,light:'green',speedT:0,timeT:0,rpmHigh:false,lineOn:false,lineT:0,d:null,dI:0,hudT:0};
-  if(l.full){const g=[2,3,5,8];exam.dI=g[Math.floor(Math.random()*g.length)]}
+  if(l.full){const g=[3,4,6,8];exam.dI=g[Math.floor(Math.random()*g.length)]}
   lesson.zone=null;
   renderExam();
 }
@@ -1701,7 +1702,7 @@ function tickExam(dt){
   if(exam.d&&!exam.d.done){tickDanger(dt);if(exam.over)return;if(exam.full)return}
   if(exam.full&&!exam.d&&!exam.active&&exam.i===exam.dI&&kmh(s)>5){exam.dW=(exam.dW||0)+dt;if(exam.dW>1.2){startDanger();return}}
   /* Đi quá chậm qua đoạn chuyển bài nên còi chưa kịp báo: dời tình huống sang đoạn chuyển bài kế tiếp */
-  if(exam.full&&!exam.d&&exam.i>exam.dI){const n=[3,5,8].find(v=>exam.active?v>exam.i:v>=exam.i);if(n){exam.dI=n;exam.dW=0}}
+  if(exam.full&&!exam.d&&exam.i>exam.dI){const n=[4,6,8].find(v=>exam.active?v>exam.i:v>=exam.i);if(n){exam.dI=n;exam.dW=0}}
   /* Tiến trình bài */
   if(!exam.active){
     lesson.zone=cur.zone||null;
